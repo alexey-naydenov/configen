@@ -80,8 +80,8 @@ bool ValidateSubModule(cosnt SubModule &val);
 ```
 Source:
 ```c++
-void SubModule::InitBigVal(BigVal *val) {val = 1.0;}
-bool SubModule::ValidateBigVal(const BigVal &val) {return true;}
+void SubModule::InitBigVal(SubModule::BigVal *val) {val = 1.0;}
+bool SubModule::ValidateBigVal(const SubModule::BigVal &val) {return true;}
 
 SubModule::SubModule() {
   InitSubModule(this);
@@ -92,10 +92,10 @@ bool SubModule::IsValid() {
 
 void InitSubModule(SubModule *val) {
   InitSmallInt(&val->small_val);
-  InitBigVal(&val->big_val);
+  SubModule::InitBigVal(&val->big_val);
 }
 bool ValidateSubModule(cosnt SubModule &val) {
   ValidateSmallInt(val->small_val);
-  ValidateBigVal(val->big_val);
+  SubModule::ValidateBigVal(val->big_val);
 }
 ```
