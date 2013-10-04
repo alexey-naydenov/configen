@@ -1,8 +1,10 @@
 # configen
 
-Conde generator for configuration handling.
+Code generator for configuration handling.
 
-### Features:
+Map JSON tree onto C++ object hierarchy.
+
+### Features/Restrictions:
 
 - takes schema and produce class (C++) representing it;
 - the class can be initialized from JSON string that satisfy the
@@ -13,6 +15,7 @@ Conde generator for configuration handling.
 - all objects can be freely copied;
 - during initialization values can be verified to satisfy schema (min,
   max, etc.);
+- input is parsed once no forward references.
 
 ### Implementations details:
 
@@ -25,11 +28,24 @@ Conde generator for configuration handling.
 - name of members are the same as names of JSON objects;
 - if min/max is not specified then integer type represented by int, if
   min and max are present smallest int is chosen;
+- list with current scope, used to properly define source code;
+- dict for scope accessible names, JSON name -> c++ scoped type;
+- source file is just a dump where source code is added as parsing
+  process;
+- declaration lists for header: subclasses, variables, methods,
+  functions, member init satements, member verify satements;
+- full class declaration is assembled at the end of JSON object
+  definition;
+- declarations of non-member functions are inserted after class
+  declaration;
+- parent class takes full declaration of subclass and inserts into its
+  declaration verbatim;
+  
 
 ## Sample JSON schemes and what they should produce
 
-Simple variable:
-```js
+### Simple variable:
+```json
 "small_int": {
   "type": "integer",
   "default": 100,
@@ -50,8 +66,9 @@ bool ValidateSmallInt(const SmallInt &val) {
   return val >= 10 && val <= 1000;
 } 
 ```
-Object that contains simple variables:
-```js
+
+### Object that contains simple variables:
+```json
 "sub_module": {
   "small_val": {"$ref": "small_int"},
   "big_val": {
@@ -97,5 +114,41 @@ void InitSubModule(SubModule *val) {
 bool ValidateSubModule(cosnt SubModule &val) {
   ValidateSmallInt(val->small_val);
   SubModule::ValidateBigVal(val->big_val);
+}
+```
+
+### Array of objects
+
+```json
+"config": {
+  "modules": {
+    "type": "array",
+	"items": {"$ref": "sub_module"}	
+  }
+}
+```
+
+Header:
+```c++
+class Config {
+ public:
+  std::vector<SubModule> modules;
+};
+void InitModule(Module *val);
+bool ValidateModule(cosnt Module &val);
+```
+
+Source:
+```c++
+void InitModule(Module *val) {
+  // vector is empty nothing to init, will be different if length is given
+}
+bool VerifyModule(const Module &val) {
+  for (std::vector<SubModule> it = val->submodules.begin();
+       it != val->submodules.end(); ++it) {
+	if (!VerifySubModule(*it)) {
+	  return false;
+	}
+  }
 }
 ```
