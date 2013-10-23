@@ -50,7 +50,7 @@ Map JSON tree onto C++ object hierarchy.
   "type": "integer",
   "default": 100,
   "minimum": 10,
-  "maximum": 1000,
+  "maximum": 1000
 }
 ```
 Header:
@@ -73,7 +73,7 @@ bool ValidateSmallInt(const SmallInt &val) {
   "small_val": {"$ref": "small_int"},
   "big_val": {
     "type": "number",
-    "default": "1.0",
+    "default": 1.0
   }
 }
 ```
@@ -135,7 +135,7 @@ class Config {
   std::vector<SubModule> modules;
 };
 void InitModule(Module *val);
-bool ValidateModule(cosnt Module &val);
+bool ValidateModule(const Module &val);
 ```
 
 Source:

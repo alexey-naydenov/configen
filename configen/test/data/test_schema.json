@@ -1,0 +1,22 @@
+{
+    "small_int": {
+	"type": "integer",
+	"default": 100,
+	"minimum": 10,
+	"maximum": 1000
+    },
+    "sub_module": {
+	"small_val": {"$ref": "small_int"},
+	"big_val": {
+	    "type": "number",
+	    "default": 1.0
+	}
+    },
+    "config": {
+	"modules": {
+	    "type": "array",
+	    "items": {"$ref": "sub_module"}	
+	}
+    }
+}
+
