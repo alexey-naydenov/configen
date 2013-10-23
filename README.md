@@ -70,10 +70,13 @@ bool ValidateSmallInt(const SmallInt &val) {
 ### Object that contains simple variables:
 ```json
 "sub_module": {
-  "small_val": {"$ref": "small_int"},
-  "big_val": {
-    "type": "number",
-    "default": 1.0
+  "type": "object",
+  "properties": {
+    "small_val": {"$ref": "small_int"},
+    "big_val": {
+      "type": "number",
+      "default": 1.0
+    }
   }
 }
 ```

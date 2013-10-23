@@ -151,6 +151,8 @@ def make_init_definition(name, properties, members=None):
     definition.append('}')
     return definition
 
+_CHECK_TEMPLATES = {'minimum': '(val >= {minimum});',
+                    'maximum': '(val <= {maximum});'}
 
 def make_validate_definition(name, properties, members=None):
     """Create definition for validate function.
@@ -160,18 +162,15 @@ def make_validate_definition(name, properties, members=None):
     The min/max properties can not be set if members is a nonempty
     list.
 
-    Examples:
-
     """
     if members is None:
         members = []
     definition = [make_validate_declaration(name) + ' {']
     definition.append(_indent('bool result = true;'))
     checks = _generate_calls_for_members('Validate', '', members)
-    if 'minimum' in properties:
-        checks.append('(val >= ' + str(properties['minimum']) + ');')
-    if 'maximum' in properties:
-        checks.append('(val <= ' + str(properties['maximum']) + ');')
+    for property_key, check_template in _CHECK_TEMPLATES.items():
+        if property_key in properties:
+            checks.append(check_template.format_map(properties));
     definition.extend([_INDENT + 'result &= ' + c for c in checks])
     definition.append(_indent('return result;'))
     definition.append('}')
