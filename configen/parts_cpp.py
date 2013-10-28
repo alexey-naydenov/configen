@@ -4,9 +4,20 @@ import configen.utils as cu
 
 _INDENT = '  '
 
-_INTEGER_TYPEDEF_TEMPLATE = 'typedef {signpref}int{bitlen}_t {name};'
-_NUMBER_TYPEDEF_TEMPLATE = 'typedef double {name};'
-_STRING_TYPEDEF_TEMPLATE = 'typedef std::string {name};'
+_INTEGER_TYPEDEF_TEMPLATE = 'typedef {signpref}int{bitlen}_t {ns}{name};'
+_NUMBER_TYPEDEF_TEMPLATE = 'typedef double {ns}{name};'
+_STRING_TYPEDEF_TEMPLATE = 'typedef std::string {ns}{name};'
+
+
+def to_namespace_prefix(namespace):
+    if namespace is None or len(namespace) == 0:
+        return ''
+    else:
+        return '::'.join(namespace) + '::'
+
+
+def to_type_name(name):
+    return [cu.to_camel_case(n) for n in name]
 
 
 def make_integer_typedef(name, properties=None):
@@ -47,29 +58,29 @@ def make_integer_typedef(name, properties=None):
         cu.calculate_int_bit_length_to_hold(properties.get('maximum', 0)))
     if bit_length == 0:
         bit_length = 32
+    type_name = to_type_name(name)
     return _INTEGER_TYPEDEF_TEMPLATE.format(
-        name=cu.to_camel_case(name), bitlen=bit_length, signpref=sign_prefix)
+        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]), 
+        bitlen=bit_length, signpref=sign_prefix)
 
 
 def make_number_typedef(name, properties=None):
     """Create typedef for a double number."""
-    return _NUMBER_TYPEDEF_TEMPLATE.format(name=cu.to_camel_case(name))
+    type_name = to_type_name(name)
+    return _NUMBER_TYPEDEF_TEMPLATE.format(
+        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]))
 
 
 def make_string_typedef(name, properties=None):
     """Create typedef for a string."""
-    return _STRING_TYPEDEF_TEMPLATE.format(name=cu.to_camel_case(name))
+    type_name = to_type_name(name)
+    return _STRING_TYPEDEF_TEMPLATE.format(
+        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]))
 
 
-def to_namespace_prefix(namespace):
-    if namespace is None or len(namespace) == 0:
-        return ''
-    else:
-        return '::'.join(namespace) + '::'
-
-
-def to_type_name(name):
-    return [cu.to_camel_case(n) for n in name]
+TYPE_TYPDEDEF_MAKER_DICT = {'integer': make_integer_typedef,
+                            'number': make_number_typedef,
+                            'string': make_string_typedef}
 
 
 def make_init_declaration(name):

@@ -1,36 +1,33 @@
-def _start_generation(state, schema, namespace):
-    state['files']['header'] = []
-    state['files']['src'] = []
-    print('start')
-    return state
+import configen.utils as cu
+import configen.parts_cpp as cpc
 
 
-def _end_generation(state, schema, namespace):
-    print('end')
-    return state
+class CppGenerator:
+    def __init__(self):
+        self.files = {'header': [], 'src': []}
+        self.namespace = []  # real namespace of config class
+        self.class_space = []  # list of container classes that hold this one
+        self.forward_definitions = []  # will be placed at the top of header
 
+    def start(self, schema, namespace):
+        self.namespace = namespace
 
-def _add_reference(state, name, schema):
-    print('ref ')
-    return state
+    def stop(self, schema, namespace):
+        print('stop')
 
+    def add_reference(self, name, schema):
+        print('ref ')
 
-def _add_variable(state, name, schema):
-    print('var ' + name)
-    return state
+    def add_variable(self, name, schema):
+        self.forward_definitions.append(
+            cpc.TYPE_TYPDEDEF_MAKER_DICT[schema['type']](
+                self.class_space + [name], schema))
 
+    def add_array(self, name, schema):
+        print('array ' + name)
 
-def _start_object(state, name, schema):
-    print('obj ' + name)
-    return state
+    def start_object(self, name, schema):
+        self.class_space.append(cu.to_camel_case(name))
 
-
-def _end_object(state, name, schema):
-    print('end ' + name)
-    return state
-
-
-CPP_GENERATORS = {'start': _start_generation, 'end': _end_generation,
-                  'reference': _add_reference, 'variable': _add_variable,
-                  'object_start': _start_object, 'object_end': _end_object}
-
+    def end_object(self, name, schema):
+        self.class_space.pop()
