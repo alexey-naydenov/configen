@@ -83,7 +83,7 @@ TYPE_TYPDEDEF_MAKER_DICT = {'integer': make_integer_typedef,
                             'string': make_string_typedef}
 
 
-def make_init_declaration(name):
+def make_init_declaration(name, prefix=None):
     """Return declaration of init function.
 
     Examples:
@@ -94,12 +94,17 @@ def make_init_declaration(name):
     'void Myspace::InitVar(Myspace::Var *val)'
 
     """
+    if prefix is None:
+        prefix = ''
+    else:
+        prefix = prefix + ' '
     type_name = to_type_name(name)
-    return 'void {ns}Init{name}({ns}{name} *val)'.format(
-        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]))
+    return '{prefix}void {ns}Init{name}({ns}{name} *val)'.format(
+        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]),
+        prefix=prefix)
 
 
-def make_validate_declaration(name):
+def make_validate_declaration(name, prefix=None):
     """Return declaration of init function.
 
     Examples:
@@ -108,19 +113,37 @@ def make_validate_declaration(name):
     'void Myspace::ValidateVar(const Myspace::Var &val)'
 
     """
+    if prefix is None:
+        prefix = ''
+    else:
+        prefix = prefix + ' '
     type_name = to_type_name(name)
-    return 'void {ns}Validate{name}(const {ns}{name} &val)'.format(
-        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]))
+    return '{prefix}void {ns}Validate{name}(const {ns}{name} &val)'.format(
+        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]),
+        prefix=prefix)
 
 
-def _indent(value):
+def make_constructor_declaration(name):
+    type_name = to_type_name(name)
+    return ['{class_name}() {{'.format(class_name=type_name[-1]),
+            indent('Init{name}(this);'.format(name=type_name[-1])),
+            '}']
+
+def make_isvalid_declaration(name):
+    type_name = to_type_name(name)
+    return ['bool IsValid() const {{'.format(class_name=type_name[-1]),
+            indent('return Validate{name}(*this);'.format(name=type_name[-1])),
+            '}']
+
+
+def indent(value, times=1):
     """Indent a string or all strings in the list.
 
     Returns list.
     """
     if not isinstance(value, list):
-        return _INDENT + value
-    return [_INDENT + v for v in value]
+        return _INDENT*times + value
+    return [_INDENT*times + v for v in value]
 
 
 def _generate_calls_for_members(function_name, prefix, members):
@@ -156,8 +179,8 @@ def make_init_definition(name, properties, members=None):
     definition = [make_init_declaration(name) + ' {']
     if 'default' in properties:
         definition.append(
-            _indent('*val = {val};'.format(val=str(properties['default']))))
-    init_calls = _indent(_generate_calls_for_members('Init', '&', members))
+            indent('*val = {val};'.format(val=str(properties['default']))))
+    init_calls = indent(_generate_calls_for_members('Init', '&', members))
     definition.extend(init_calls)
     definition.append('}')
     return definition
@@ -177,12 +200,33 @@ def make_validate_definition(name, properties, members=None):
     if members is None:
         members = []
     definition = [make_validate_declaration(name) + ' {']
-    definition.append(_indent('bool result = true;'))
+    definition.append(indent('bool result = true;'))
     checks = _generate_calls_for_members('Validate', '', members)
     for property_key, check_template in _CHECK_TEMPLATES.items():
         if property_key in properties:
             checks.append(check_template.format_map(properties));
     definition.extend([_INDENT + 'result &= ' + c for c in checks])
-    definition.append(_indent('return result;'))
+    definition.append(indent('return result;'))
     definition.append('}')
     return definition
+
+
+def make_namespace_begin(namespace):
+    return ['namespace {0} {{'.format(n) for n in namespace]
+
+
+def make_namespace_end(namespace):
+    return ['}} // namespace {0}'.format(n) for n in namespace]
+
+
+def make_class_definition(name, namespace):
+    return 'struct {ns}{cn};'.format(cn=cu.to_camel_case(name),
+                                     ns=to_namespace_prefix(namespace))
+
+
+def make_class_begin(name):
+    return 'struct {0} {{'.format(cu.to_camel_case(name))
+
+
+def make_class_end(name):
+    return '}}; // struct {0}'.format(cu.to_camel_case(name))
