@@ -64,7 +64,8 @@ class CppGenerator:
         self.files['src'].extend(cpp.namespace_end(self.namespace))
 
     def add_reference(self, name, schema):
-        print('ref ')
+        namespace = schema['$ref'].split('.')
+        self._to_members(namespace, name)
 
     def add_variable(self, name, schema):
         # header stuff
@@ -117,9 +118,8 @@ class CppGenerator:
         self._to_header(cpp.isvalid_declaration([name]))
         # src class stuff
         members = self.members_lists[-1]
-        print(members)
-        print(self.class_space)
         self._to_src(cpp.init_definition(self.class_space, {}, members))
+        self._to_src(cpp.validate_definition(self.class_space, {}, members))
         # exit scope
         self.class_space.pop()
         self.current_indent -= 1
