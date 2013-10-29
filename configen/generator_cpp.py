@@ -67,6 +67,7 @@ class CppGenerator:
         print('ref ')
 
     def add_variable(self, name, schema):
+        # header stuff
         if not self.class_space:
             self._to_forward_definitions(
                 cpp.TYPE_TYPDEDEF_MAKER_DICT[schema['type']]([name], schema))
@@ -80,6 +81,9 @@ class CppGenerator:
         self._to_header('')
         self._to_header(cpp.init_declaration([name], prefix) + ';')
         self._to_header(cpp.validate_declaration([name], prefix) + ';')
+        # src stuff
+        self._to_src(cpp.init_definition(self.class_space + [name], schema))
+        self._to_src(cpp.validate_definition(self.class_space + [name], schema))
 
     def add_array(self, name, schema):
         print('array ' + name)

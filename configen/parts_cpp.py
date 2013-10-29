@@ -151,11 +151,11 @@ def _generate_calls_for_members(function_name, prefix, members):
     """Create list with function call for each member."""
     calls = []
     for member in members:
-        type_name = to_type_name(member)
+        type_name = to_type_name(member[0])
         calls.append('{ns}{fname}{tname}({prefix}val->{vname});'.format(
             fname=function_name, prefix=prefix,
             ns=to_namespace_prefix(type_name[:-1]),
-            tname=type_name[-1], vname=member[-1]))
+            tname=type_name[-1], vname=member[1]))
     return calls
 
 
@@ -181,8 +181,8 @@ def init_definition(name, properties, members=None):
     if 'default' in properties:
         definition.append(
             indent('*val = {val};'.format(val=str(properties['default']))))
-    # init_calls = indent(_generate_calls_for_members('Init', '&', members))
-    # definition.extend(init_calls)
+    init_calls = indent(_generate_calls_for_members('Init', '&', members))
+    definition.extend(init_calls)
     definition.append('}')
     return definition
 
