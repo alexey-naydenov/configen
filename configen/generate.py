@@ -2,21 +2,21 @@
 
 import json
 
-from configen.generators_cpp import CppGenerator
+from configen.generator_cpp import CppGenerator
 
 
 _LANGUAGE_GENERATORS_DICT = {'c++': CppGenerator}
 
 
-def convert_json(json_schema, namespace, language):
+def convert_json(json_schema, namespace, language, **kwargs):
     """Convert json to dict and call actual generator function."""
     return convert_schema_to_language(
-        json.loads(json_schema), namespace, language)
+        json.loads(json_schema), namespace, language, **kwargs)
 
 
-def convert_schema_to_language(schema, namespace, language):
+def convert_schema_to_language(schema, namespace, language, **kwargs):
     """Get generators for particular language, start and end processing."""
-    generator = _LANGUAGE_GENERATORS_DICT[language]()
+    generator = _LANGUAGE_GENERATORS_DICT[language](**kwargs)
     generator.start(schema, namespace)
     convert_schema(generator, schema)
     generator.stop(schema, namespace)
