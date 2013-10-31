@@ -201,15 +201,17 @@ def generate_variable(schema):
     code_parts = {}
     code_parts['predefine'] = ('typedef ' + cpp.to_cpp_type(schema) 
                                + ' {typename};')
-    code_parts['declarations'] = [cpp.init_declaration(schema),
-                                  cpp.validate_declaration(schema)]
+    code_parts['declarations'] = [cpp.init_declaration(),
+                                  cpp.validate_declaration()]
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
                                  + cpp.variable_validate_definition(schema))
     return code_parts
 
 def generate_object(members):
     code_parts = {'predefine': 'struct {namespace}{typename};',
-                  'declarations': ['', 'struct {typename} {lb}'],
+                  'declarations': [cpp.init_declaration(), 
+                                   cpp.validate_declaration(), '', 
+                                   'struct {typename} {lb}'],
                   'definitions': []}
     # lists to collect code parts
     member_defines = []
@@ -218,9 +220,8 @@ def generate_object(members):
     for member_name, member_code in members.items():
         member_type = cu.to_camel_case(member_name)
         member_format_dict = {
-            'namespace': '{typename}::',
-            'function_prefix': 'static ', 'typename': member_type,
-            'lb': '{lb}', 'rb': '{rb}'}
+            'namespace': '{typename}::', 'function_prefix': 'static ', 
+            'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
         # member predefines
         member_defines.append(
             member_code['predefine'].format_map(member_format_dict))
@@ -228,11 +229,16 @@ def generate_object(members):
         function_declarations.extend(
             [member_declaration.format_map(member_format_dict)
              for member_declaration in member_code['declarations']])
+        
         # member definitions for init and validate
         function_definitions.extend(
             [member_definition.format_map(member_format_dict)
              for member_definition in member_code['definitions']])
+    # constructor and validate
+    function_declarations.extend(
+        [''] + cpp.constructor_declaration() + cpp.isvalid_declaration())
     # finalize and return
+    pprint(function_declarations)
     code_parts['declarations'].extend(cpp.indent(member_defines))
     code_parts['declarations'].append('')
     code_parts['declarations'].extend(cpp.indent(function_declarations))

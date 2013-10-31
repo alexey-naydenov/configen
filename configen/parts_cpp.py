@@ -118,13 +118,13 @@ def _validate_declaration(name, prefix=None):
         prefix=prefix)
 
 
-def constructor_declaration(name):
+def _constructor_declaration(name):
     type_name = to_type_name(name)
     return ['{class_name}() {{'.format(class_name=type_name[-1]),
             indent('Init{name}(this);'.format(name=type_name[-1])),
             '}']
 
-def isvalid_declaration(name):
+def _isvalid_declaration(name):
     type_name = to_type_name(name)
     return ['bool IsValid() const {{'.format(class_name=type_name[-1]),
             indent('return Validate{name}(*this);'.format(name=type_name[-1])),
@@ -277,7 +277,7 @@ def to_cpp_type(schema):
 
 # ==================== init ====================
 
-def init_declaration(schema):
+def init_declaration():
     return '{function_prefix}void Init{typename}({typename} *value);'
 
 
@@ -292,7 +292,7 @@ def variable_init_definition(schema):
 
 # ==================== validate ====================
 
-def validate_declaration(schema):
+def validate_declaration():
     return '{function_prefix}bool Validate{typename}(const {typename} &value);'
 
 _CHECK_TEMPLATES = {'minimum': '(value >= {minimum});',
@@ -311,3 +311,15 @@ def variable_validate_definition(schema):
     definition.extend(indent(body))
     definition.append('{rb}')
     return definition
+
+# ==================== class ====================
+
+def constructor_declaration():
+    return ['{typename}() {lb}',
+            indent('Init{typename}(this);'),
+            '{rb}']
+
+def isvalid_declaration():
+    return ['bool IsValid() const {lb}',
+            indent('return Validate{typename}(*this);'),
+            '{rb}']
