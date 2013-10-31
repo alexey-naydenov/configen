@@ -21,7 +21,14 @@ def to_type_name(name):
     return [cu.to_camel_case(n) for n in name]
 
 
-def integer_typedef(name, properties=None):
+def array_properties_to_typedef_template(array_properties):
+    if array_properties is None:
+        array_properties = []
+    return ('typedef ' + 'std::vector<'*len(array_properties) 
+            + '{existing_type}'+ '> '*len(array_properties) + ' {new_type};')
+
+
+def integer_typedef(name, properties=None, array_properties=None):
     """Create typedef string for an integer.
 
     Correct integer length is choosen if min and/or max are present.
@@ -33,19 +40,6 @@ def integer_typedef(name, properties=None):
     -(1<<8) or similar.
 
     Examples:
-
-    >>> integer_typedef('abc')
-    'typedef int32_t Abc;'
-    >>> integer_typedef('abc', {'minimum': 0})
-    'typedef uint32_t Abc;'
-    >>> integer_typedef('abc', {'maximum': 0})
-    'typedef int32_t Abc;'
-    >>> integer_typedef('abc', {'maximum': 128})
-    'typedef int8_t Abc;'
-    >>> integer_typedef('abc', {'maximum': 128, 'minimum': -129})
-    'typedef int16_t Abc;'
-    >>> integer_typedef('abc', {'maximum': 129, 'minimum': 0})
-    'typedef uint8_t Abc;'
 
     """
     if properties is None:
@@ -59,10 +53,10 @@ def integer_typedef(name, properties=None):
         cu.calculate_int_bit_length_to_hold(properties.get('maximum', 0)))
     if bit_length == 0:
         bit_length = 32
-    type_name = to_type_name(name)
-    return _INTEGER_TYPEDEF_TEMPLATE.format(
-        name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]), 
-        bitlen=bit_length, signpref=sign_prefix)
+    int_type = sign_prefix + 'int' + str(bit_length) + '_t'
+    template = array_properties_to_typedef_template(array_properties)
+    return template.format(existing_type=int_type, 
+                           new_type=to_type_name(name)[-1])
 
 
 def number_typedef(name, properties=None):
@@ -84,7 +78,7 @@ TYPE_TYPDEDEF_MAKER_DICT = {'integer': integer_typedef,
                             'string': string_typedef}
 
 
-def init_declaration(name, prefix=None):
+def _init_declaration(name, prefix=None):
     """Return declaration of init function.
 
     Examples:
@@ -105,13 +99,13 @@ def init_declaration(name, prefix=None):
         prefix=prefix)
 
 
-def validate_declaration(name, prefix=None):
+def _validate_declaration(name, prefix=None):
     """Return declaration of init function.
 
     Examples:
 
     >>> validate_declaration(['myspace', 'var'])
-    'void Myspace::ValidateVar(const Myspace::Var &val)'
+    'bool Myspace::ValidateVar(const Myspace::Var &val)'
 
     """
     if prefix is None:
@@ -152,20 +146,20 @@ def _generate_calls_for_members(function_name, prefix, members):
     calls = []
     for member in members:
         type_name = to_type_name(member[0])
-        calls.append('{ns}{fname}{tname}({prefix}val->{vname});'.format(
+        calls.append('{ns}{fname}{tname}({prefix}{{it}}->{vname});'.format(
             fname=function_name, prefix=prefix,
             ns=to_namespace_prefix(type_name[:-1]),
             tname=type_name[-1], vname=member[1]))
     return calls
 
 
-def init_definition(name, properties, members=None):
+def init_definition(name, properties, members=None, array_properties=None):
     """Create definition for init function.
 
     .. note::
     
     The default value in properties can not be set if members is
-    a nonempty list.
+    a nonempty list. Only work with 1D arrays.
 
     Examples:
 
@@ -177,17 +171,23 @@ def init_definition(name, properties, members=None):
     """
     if members is None:
         members = []
+    array_properties = array_properties if array_properties is not None else []
     definition = [init_declaration(name) + ' {']
+    init_body = []
     if 'default' in properties:
-        definition.append(
-            indent('*val = {val};'.format(val=str(properties['default']))))
+        init_body.append(
+            indent('*{{it}} = {val};'.format(val=str(properties['default']))))
     init_calls = indent(_generate_calls_for_members('Init', '&', members))
-    definition.extend(init_calls)
+    init_body.extend(init_calls)
+    # if array size is given then iterate
+    if array_properties:
+        if 'maxItems' in []:
+            definition.extend([l.format(it='val') for l in init_body])
+    else:
+        definition.extend([l.format(it='val') for l in init_body])
     definition.append('}')
     return definition
 
-_CHECK_TEMPLATES = {'minimum': '(val >= {minimum});',
-                    'maximum': '(val <= {maximum});'}
 
 def validate_definition(name, properties, members=None):
     """Create definition for validate function.
@@ -251,3 +251,63 @@ def header_guard_back(name):
 def include(filename, path=None):
     path = path if path else ''
     return ['#include <{0}>'.format(os.path.join(path, filename))]
+
+# refactoring stuff
+
+_SCHEMA_TO_CPP_TYPE_DICT = {'bool': 'bool', 'number': 'double',
+                            'string': 'std::string'}
+
+def to_cpp_type(schema):
+    """Convert schema type name to cpp type."""
+    typename = schema['type']
+    if typename in _SCHEMA_TO_CPP_TYPE_DICT:
+        return _SCHEMA_TO_CPP_TYPE_DICT[typename]
+    if typename == 'integer':
+        if schema.get('minimum', -1) >= 0:
+            sign_prefix = 'u'
+        else:
+            sign_prefix = ''
+        bit_length = max(
+            cu.calculate_int_bit_length_to_hold(schema.get('minimum', 0)),
+            cu.calculate_int_bit_length_to_hold(schema.get('maximum', 0)))
+        if bit_length == 0:
+            bit_length = 32
+        return sign_prefix + 'int' + str(bit_length) + '_t'
+    assert False, 'Type "' + str(typename) + '" is not a simple type'
+
+# ==================== init ====================
+
+def init_declaration(schema):
+    return 'void Init{typename}({typename} *value);'
+
+
+def variable_init_definition(schema):
+    definition = [
+        'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
+    if 'default' in schema:
+        definition.append(
+            indent('*value = {0};'.format(str(schema['default']))))
+    definition.append('{rb}')
+    return definition
+
+# ==================== validate ====================
+
+def validate_declaration(schema):
+    return 'bool Validate{typename}(const {typename} &value);'
+
+_CHECK_TEMPLATES = {'minimum': '(value >= {minimum});',
+                    'maximum': '(value <= {maximum});'}
+
+def variable_validate_definition(schema):
+    definition = [
+        'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
+    body = ['bool result = true;']
+    checks = []
+    for property_key, check_template in _CHECK_TEMPLATES.items():
+        if property_key in schema:
+            checks.append(check_template.format_map(schema));
+    body.extend(['result &= ' + c for c in checks])
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition

@@ -33,7 +33,7 @@ def convert_schema(generator, schema):
     """
     for variable_name, subschema in schema.items():
         if '$ref' in subschema:
-            generator.add_reference(variable_name, subschema)
+            generator.add_reference(variable_name, subschema, is_array)
             continue
         if subschema['type'] == 'object':
             generator.start_object(variable_name, subschema)
@@ -41,7 +41,9 @@ def convert_schema(generator, schema):
             generator.end_object(variable_name, subschema)
             continue
         if subschema['type'] == 'array':
-            generator.add_array(variable_name, subschema)
+            generator.start_array(variable_name, subschema)
+            convert_schema(generator, {variable_name: subschema['items']})
+            generator.end_array(variable_name, subschema)
             continue
         generator.add_variable(variable_name, subschema)
     return generator

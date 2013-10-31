@@ -1,6 +1,7 @@
 from datetime import datetime
 import configen.utils as cu
 import configen.parts_cpp as cpp
+from pprint import pprint
 
 
 class CppGenerator:
@@ -17,6 +18,7 @@ class CppGenerator:
         self.location = location
         self.includes = includes if includes else []
         self.guard = [self.filename, datetime.now().strftime('%y_%m_%d_%H_%M')]
+        self.array_properties = []
             
 
     def _to_line_list(self, line_list, new_lines):
@@ -71,11 +73,13 @@ class CppGenerator:
         # header stuff
         if not self.class_space:
             self._to_forward_definitions(
-                cpp.TYPE_TYPDEDEF_MAKER_DICT[schema['type']]([name], schema))
+                cpp.TYPE_TYPDEDEF_MAKER_DICT[schema['type']](
+                    [name], schema, self.array_properties))
             prefix = None
         else:
             self._to_header(
-                cpp.TYPE_TYPDEDEF_MAKER_DICT[schema['type']]([name], schema))
+                cpp.TYPE_TYPDEDEF_MAKER_DICT[schema['type']](
+                    [name], schema, self.array_properties))
             self._to_header(cu.to_camel_case(name) + ' ' + name + ';')
             prefix = 'static'
             self._to_members(self.class_space + [name], name)
@@ -83,11 +87,10 @@ class CppGenerator:
         self._to_header(cpp.init_declaration([name], prefix) + ';')
         self._to_header(cpp.validate_declaration([name], prefix) + ';')
         # src stuff
-        self._to_src(cpp.init_definition(self.class_space + [name], schema))
+        self._to_src(cpp.init_definition(
+            self.class_space + [name], schema, 
+            array_properties = self.array_properties))
         self._to_src(cpp.validate_definition(self.class_space + [name], schema))
-
-    def add_array(self, name, schema):
-        print('array ' + name)
 
     def start_object(self, name, schema):
         # add class to higher up class member list
@@ -128,3 +131,86 @@ class CppGenerator:
         # add variable to holding class if it exists
         if self.class_space:
             self._to_header(cu.to_camel_case(name) + ' ' + name + ';')
+
+    def start_array(self, name, schema):
+        """Store array info on stack so that later vector is created.
+
+        Stack like structure is required to handle array of arrays.
+        It is not implemented but maxItems is used to set vector size
+        during init, minItems and maxItems are used during validation.
+
+        """
+        array_properties = {k: v for k, v in schema.items() 
+                            if k in ['minItems', 'maxItems']}
+        self.array_properties.append(array_properties)
+
+    def end_array(self, name, schema):
+        """Remove one array description from the stack."""
+        self.array_properties.pop()
+
+_FILE_FORMAT_DICT = {'lb': '{', 'rb': '}', 'namespace': ''}
+
+def generate_header(name_code_dict, namespace=None, includes=None, 
+                    filename=None):
+    namespace = namespace if namespace is not None else []
+    includes = includes if includes is not None else []
+    filename = filename if filename is not None else 'config'
+    assert isinstance(namespace, list) == True, 'Namespace must be a list.'
+    header = []
+    guard_parts = [filename, datetime.now().strftime('%y_%m_%d_%H_%M')]
+    # headers start
+    header.extend(cpp.header_guard_front(guard_parts))
+    for include_file in includes:
+        header.extend(cpp.include(include_file))
+    header.extend(cpp.namespace_begin(namespace))
+    # header typedefs and 
+    for name, code in name_code_dict.items():
+        format_dict = {}
+        format_dict.update(_FILE_FORMAT_DICT)
+        format_dict['typename'] = cu.to_camel_case(name)
+        header.append(code['predefine'].format_map(format_dict))
+    # header declarations
+    for name, code in name_code_dict.items():
+        format_dict = {}
+        format_dict.update(_FILE_FORMAT_DICT)
+        format_dict['typename'] = cu.to_camel_case(name)
+        for template in code['declarations']:
+            header.append(template.format_map(format_dict))
+    # header end
+    header.extend(cpp.namespace_end(namespace))
+    header.extend(cpp.header_guard_back(guard_parts))
+    return header
+
+def generate_source(name_code_dict, namespace=None, includes=None, 
+                    filename=None, include_path=None):
+    namespace = namespace if namespace is not None else []
+    includes = includes if includes is not None else []
+    filename = filename if filename is not None else 'config'
+    include_path = include_path if include_path is not None else ''
+    assert isinstance(namespace, list) == True, 'Namespace must be a list.'
+    source = []
+    # source start
+    for include_file in includes:
+        source.extend(cpp.include(include_file))
+    source.extend(cpp.include(filename + '.h', include_path))
+    source.extend(cpp.namespace_begin(namespace))
+    # definitions
+    for name, code in name_code_dict.items():
+        format_dict = {}
+        format_dict.update(_FILE_FORMAT_DICT)
+        format_dict['typename'] = cu.to_camel_case(name)
+        for template in code['definitions']:
+            source.append(template.format_map(format_dict))
+    # source end
+    source.extend(cpp.namespace_end(namespace))
+    return source
+
+def generate_variable(schema):
+    code_parts = {}
+    code_parts['predefine'] = ('typedef ' + cpp.to_cpp_type(schema) 
+                               + ' {typename};')
+    code_parts['declarations'] = [cpp.init_declaration(schema),
+                                  cpp.validate_declaration(schema)]
+    code_parts['definitions'] = (cpp.variable_init_definition(schema)
+                                 + cpp.variable_validate_definition(schema))
+    return code_parts
