@@ -12,7 +12,7 @@ def main():
     includes = ['stdint.h', 'vector', 'string']
     # json_schema = open('configen/test/data/test_schema.json', 'r').read()
     string_of_json = open(
-        '/home/leha/personal/configen/configen/test/data/test_variable.json', 'r').read()
+        '/home/leha/personal/configen/configen/test/data/test_object_variables.json', 'r').read()
     g=cg.convert_json(string_of_json, language='c++', namespace=['mycfg'],
                       filename=filename, include_path=include_path);
     # write files

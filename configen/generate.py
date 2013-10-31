@@ -36,4 +36,11 @@ def convert_schema(generator_module, schema):
     if 'type' in schema:
         if schema['type'] in _SIMPLE_TYPES:
             return generator_module.generate_variable(schema)
-    return schema
+        if schema['type'] == 'object':
+            members = {
+                member_name: convert_schema(generator_module, member_schema)
+                       for member_name, member_schema in schema['properties'].items()}
+            return generator_module.generate_object(members)
+        # unknown type
+        return None
+

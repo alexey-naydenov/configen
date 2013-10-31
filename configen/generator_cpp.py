@@ -170,7 +170,7 @@ def generate_header(name_code_dict, namespace=None, includes=None,
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
-        for template in code['declarations']:
+        for template in code.get('declarations', []):
             header.append(template.format_map(format_dict))
     # header end
     header.extend(cpp.namespace_end(namespace))
@@ -190,7 +190,7 @@ def generate_source(name_code_dict, namespace=None, includes=None,
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
-        for template in code['definitions']:
+        for template in code.get('definitions', []):
             source.append(template.format_map(format_dict))
     # source end
     source.extend(cpp.namespace_end(namespace))
@@ -204,6 +204,12 @@ def generate_variable(schema):
                                   cpp.validate_declaration(schema)]
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
                                  + cpp.variable_validate_definition(schema))
+    return code_parts
+
+def generate_object(members):
+    code_parts = {'predefine': 'class {namespace}{typename};'}
+    # form declarations
+    # form definitions
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']
