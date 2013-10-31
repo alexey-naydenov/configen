@@ -152,10 +152,6 @@ _FILE_FORMAT_DICT = {'lb': '{', 'rb': '}', 'namespace': ''}
 
 def generate_header(name_code_dict, namespace=None, includes=None, 
                     filename=None):
-    namespace = namespace if namespace is not None else []
-    includes = includes if includes is not None else []
-    filename = filename if filename is not None else 'config'
-    assert isinstance(namespace, list) == True, 'Namespace must be a list.'
     header = []
     guard_parts = [filename, datetime.now().strftime('%y_%m_%d_%H_%M')]
     # headers start
@@ -183,11 +179,6 @@ def generate_header(name_code_dict, namespace=None, includes=None,
 
 def generate_source(name_code_dict, namespace=None, includes=None, 
                     filename=None, include_path=None):
-    namespace = namespace if namespace is not None else []
-    includes = includes if includes is not None else []
-    filename = filename if filename is not None else 'config'
-    include_path = include_path if include_path is not None else ''
-    assert isinstance(namespace, list) == True, 'Namespace must be a list.'
     source = []
     # source start
     for include_file in includes:
@@ -214,3 +205,19 @@ def generate_variable(schema):
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
                                  + cpp.variable_validate_definition(schema))
     return code_parts
+
+_INCLUDES = ['stdint.h', 'string', 'vector']
+
+def generate_files(name_code_dict, filename=None, namespace=None,
+                   include_path=None):
+    namespace = namespace if namespace is not None else []
+    filename = filename if filename is not None else 'config'
+    include_path = include_path if include_path is not None else ''
+    assert isinstance(namespace, list) == True, 'Namespace must be a list.'
+    includes = _INCLUDES
+    files = {}
+    files['header'] = '\n'.join(generate_header(
+        name_code_dict, namespace, includes, filename))
+    files['source'] = '\n'.join(generate_source(
+        name_code_dict, namespace, [], filename, include_path))
+    return files
