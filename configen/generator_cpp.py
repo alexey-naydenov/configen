@@ -148,7 +148,8 @@ class CppGenerator:
         """Remove one array description from the stack."""
         self.array_properties.pop()
 
-_FILE_FORMAT_DICT = {'lb': '{', 'rb': '}', 'namespace': ''}
+_FILE_FORMAT_DICT = {'lb': '{', 'rb': '}', 'namespace': '',
+                     'function_prefix': ''}
 
 def generate_header(name_code_dict, namespace=None, includes=None, 
                     filename=None):
@@ -207,9 +208,36 @@ def generate_variable(schema):
     return code_parts
 
 def generate_object(members):
-    code_parts = {'predefine': 'class {namespace}{typename};'}
-    # form declarations
-    # form definitions
+    code_parts = {'predefine': 'struct {namespace}{typename};',
+                  'declarations': ['', 'struct {typename} {lb}'],
+                  'definitions': []}
+    # lists to collect code parts
+    member_defines = []
+    function_declarations = []
+    function_definitions = []
+    for member_name, member_code in members.items():
+        member_type = cu.to_camel_case(member_name)
+        member_format_dict = {
+            'namespace': '{typename}::',
+            'function_prefix': 'static ', 'typename': member_type,
+            'lb': '{lb}', 'rb': '{rb}'}
+        # member predefines
+        member_defines.append(
+            member_code['predefine'].format_map(member_format_dict))
+        # member declarations for init and validate
+        function_declarations.extend(
+            [member_declaration.format_map(member_format_dict)
+             for member_declaration in member_code['declarations']])
+        # member definitions for init and validate
+        function_definitions.extend(
+            [member_definition.format_map(member_format_dict)
+             for member_definition in member_code['definitions']])
+    # finalize and return
+    code_parts['declarations'].extend(cpp.indent(member_defines))
+    code_parts['declarations'].append('')
+    code_parts['declarations'].extend(cpp.indent(function_declarations))
+    code_parts['declarations'].append('{rb}; // {typename}')
+    code_parts['definitions'].extend(function_definitions)
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']

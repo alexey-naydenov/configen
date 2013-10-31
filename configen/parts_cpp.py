@@ -278,7 +278,7 @@ def to_cpp_type(schema):
 # ==================== init ====================
 
 def init_declaration(schema):
-    return 'void Init{typename}({typename} *value);'
+    return '{function_prefix}void Init{typename}({typename} *value);'
 
 
 def variable_init_definition(schema):
@@ -293,7 +293,7 @@ def variable_init_definition(schema):
 # ==================== validate ====================
 
 def validate_declaration(schema):
-    return 'bool Validate{typename}(const {typename} &value);'
+    return '{function_prefix}bool Validate{typename}(const {typename} &value);'
 
 _CHECK_TEMPLATES = {'minimum': '(value >= {minimum});',
                     'maximum': '(value <= {maximum});'}
