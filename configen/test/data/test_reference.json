@@ -1,0 +1,15 @@
+{
+    "an_int": {
+	"type": "integer",
+	"default": 100,
+	"minimum": 10,
+	"maximum": 1000
+    },
+    "an_object": {
+	"type": "object",
+	"properties": {
+	    "avar": {"$ref": "an_int"}
+	}
+    }
+}
+

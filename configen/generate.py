@@ -41,6 +41,8 @@ def convert_schema(generator_module, schema):
                 member_name: convert_schema(generator_module, member_schema)
                        for member_name, member_schema in schema['properties'].items()}
             return generator_module.generate_object(members)
-        # unknown type
-        return None
+    if '$ref' in schema:
+        return generator_module.generate_reference(schema)
+    # unknown type
+    return None
 

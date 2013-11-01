@@ -221,7 +221,10 @@ def generate_object(members):
     member_init = [] # accumulate calls to member init functions
     member_validate = [] # accumulate calls to member validate functions
     for member_name, member_code in members.items():
-        member_type = cu.to_camel_case(member_name)
+        if 'typename' in member_code:
+            member_type = member_code['typename'] 
+        else:
+            member_type = member_cu.to_camel_case(member_name)
         member_format_dict = {
             'namespace': '{namespace}{typename}::', 'function_prefix': 'static ', 
             'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
@@ -241,10 +244,18 @@ def generate_object(members):
         # accumulate necessary member info to init and validate them
         calls_format_dict = {'name': member_name, 'typename': member_type,
                              'namespace': '{typename}::'}
-        member_init.extend([c.format_map(calls_format_dict) 
-                            for c in cpp.init_call()])
-        member_validate.extend([c.format_map(calls_format_dict)
-                                for c in cpp.validate_call()])
+        if 'init_call' in member_code:
+            member_init.extend([c.format_map(calls_format_dict) 
+                                for c in member_code['init_call']])
+        else:
+            member_init.extend([c.format_map(calls_format_dict) 
+                                for c in cpp.init_call()])
+        if 'validate_call' in member_code:
+            member_validate.extend([c.format_map(calls_format_dict) 
+                                    for c in member_code['validate_call']])
+        else:
+            member_validate.extend([c.format_map(calls_format_dict)
+                                    for c in cpp.validate_call()])
     # constructor and validate
     function_declarations.extend(
         [''] + cpp.constructor_declaration() + cpp.isvalid_declaration())
@@ -258,6 +269,22 @@ def generate_object(members):
     code_parts['declarations'].extend(cpp.indent(member_declarations))
     code_parts['declarations'].append('{rb}; // {typename}')
     code_parts['definitions'].extend(function_definitions)
+    return code_parts
+
+def generate_reference(schema):
+    code_parts = {'predefine': '',
+                  'declarations': [],
+                  'definitions': []}
+    namespace_list = [cu.to_camel_case(name) 
+                      for name in  schema['$ref'].split('.')]
+    code_parts['typename'] = '::'.join(namespace_list)
+    if len(namespace_list) > 1:
+        namespace = '::'.join(namespace_list[:-1]) + '::'
+    else:
+        namespace = ''
+    code_parts['init_call'] = [namespace + 'Init{typename}(&value->{name});']
+    code_parts['validate_call'] = ['result &= ' + namespace 
+                                   + 'Validate{typename}(value.{name});']
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']

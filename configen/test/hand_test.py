@@ -12,7 +12,7 @@ def main():
     includes = ['stdint.h', 'vector', 'string']
     # json_schema = open('configen/test/data/test_schema.json', 'r').read()
     string_of_json = open(
-        '/home/leha/personal/configen/configen/test/data/test_object_object.json', 'r').read()
+        '/home/leha/personal/configen/configen/test/data/test_reference.json', 'r').read()
     g=cg.convert_json(string_of_json, language='c++', namespace=['mycfg'],
                       filename=filename, include_path=include_path);
     # write files
@@ -23,11 +23,11 @@ def main():
     with open('main.cc', 'w') as main_:
         main_.write('#include <inc/my_config.h>\n'
                     'int main() {\n'
-                    '  mycfg::MainObject tst;\n'
-                    '  tst.top_object.an_object.an_int = 10;\n'
-                    '  mycfg::MainObject::TopObject tst2;\n'
-                    '  tst2.an_object.an_int = 10;\n'
-                    '  tst.top_object = tst2;\n'
+                    # '  mycfg::MainObject tst;\n'
+                    # '  tst.top_object.an_object.an_int = 10;\n'
+                    # '  mycfg::MainObject::TopObject tst2;\n'
+                    # '  tst2.an_object.an_int = 10;\n'
+                    # '  tst.top_object = tst2;\n'
                     '  return 0;\n'
                     '}')
 
