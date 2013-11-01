@@ -21,10 +21,15 @@ def main():
     with open(os.path.join(filename + '.cc'), 'w') as src:
         src.write(g['source'])
     with open('main.cc', 'w') as main_:
-        main_.write("#include <inc/my_config.h>\n"
-                    "int main() {\n"
-                    "  return 0;\n"
-                    "}")
+        main_.write('#include <inc/my_config.h>\n'
+                    'int main() {\n'
+                    '  mycfg::MainObject tst;\n'
+                    '  tst.top_object.an_object.an_int = 10;\n'
+                    '  mycfg::MainObject::TopObject tst2;\n'
+                    '  tst2.an_object.an_int = 10;\n'
+                    '  tst.top_object = tst2;\n'
+                    '  return 0;\n'
+                    '}')
 
 if __name__ == '__main__':
     main()

@@ -328,7 +328,7 @@ def init_call():
     return ['{namespace}Init{typename}(&value->{name});']
 
 def validate_call():
-    return ['result & = {namespace}Validate{typename}(value->{name});']
+    return ['result &= {namespace}Validate{typename}(value.{name});']
 
 def object_init_definition(member_calls):
     definition = [
