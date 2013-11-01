@@ -1,0 +1,22 @@
+{ 
+    "top_object": {
+	"type": "object",
+	"properties": {
+	    "an_object": {
+		"type": "object",
+		"properties": {
+		    "an_int": {
+			"type": "integer",
+			"default": 100,
+			"minimum": 10,
+			"maximum": 1000
+		    },
+		    "a_number": {
+			"type": "number",
+			"default": 123.123
+		    }
+		}
+	    }
+	}
+    }
+}

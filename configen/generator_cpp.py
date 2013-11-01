@@ -208,7 +208,7 @@ def generate_variable(schema):
     return code_parts
 
 def generate_object(members):
-    code_parts = {'predefine': 'struct {namespace}{typename};',
+    code_parts = {'predefine': 'struct {typename};',
                   'declarations': [cpp.init_declaration(), 
                                    cpp.validate_declaration(), '', 
                                    'struct {typename} {lb}'],
@@ -223,7 +223,7 @@ def generate_object(members):
     for member_name, member_code in members.items():
         member_type = cu.to_camel_case(member_name)
         member_format_dict = {
-            'namespace': '{typename}::', 'function_prefix': 'static ', 
+            'namespace': '{namespace}{typename}::', 'function_prefix': 'static ', 
             'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
         # member predefines
         member_defines.append(
@@ -240,7 +240,7 @@ def generate_object(members):
              for member_definition in member_code['definitions']])
         # accumulate necessary member info to init and validate them
         calls_format_dict = {'name': member_name, 'typename': member_type,
-                             'namespace': ''}
+                             'namespace': '{typename}::'}
         member_init.extend([c.format_map(calls_format_dict) 
                             for c in cpp.init_call()])
         member_validate.extend([c.format_map(calls_format_dict)
@@ -253,9 +253,9 @@ def generate_object(members):
     # finalize and return
     code_parts['declarations'].extend(cpp.indent(member_defines))
     code_parts['declarations'].append('')
-    code_parts['declarations'].extend(cpp.indent(member_declarations))
-    code_parts['declarations'].append('')
     code_parts['declarations'].extend(cpp.indent(function_declarations))
+    code_parts['declarations'].append('')
+    code_parts['declarations'].extend(cpp.indent(member_declarations))
     code_parts['declarations'].append('{rb}; // {typename}')
     code_parts['definitions'].extend(function_definitions)
     return code_parts

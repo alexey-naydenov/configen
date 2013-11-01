@@ -12,7 +12,7 @@ def main():
     includes = ['stdint.h', 'vector', 'string']
     # json_schema = open('configen/test/data/test_schema.json', 'r').read()
     string_of_json = open(
-        '/home/leha/personal/configen/configen/test/data/test_object_variables.json', 'r').read()
+        '/home/leha/personal/configen/configen/test/data/test_object_object.json', 'r').read()
     g=cg.convert_json(string_of_json, language='c++', namespace=['mycfg'],
                       filename=filename, include_path=include_path);
     # write files
@@ -25,24 +25,6 @@ def main():
                     "int main() {\n"
                     "  return 0;\n"
                     "}")
-
-    # schema = {'type': 'integer', 'default': 100, 'minimum': 10, 
-    #           'maximum': 1000}
-    # variable_code = cgc.generate_variable(schema)
-    # pprint(variable_code)
-    # # print('\n'.join(cgc.generate_header(
-    # #     {'intvar': variable_code}, namespace=['my_cfg'], includes=includes,
-    # #     filename=filename)))
-    # # print()
-    # # print('\n'.join(cgc.generate_source(
-    # #     {'intvar': variable_code}, namespace=['my_cfg'], filename=filename,
-    # #     include_path=include_path)))
-    # files = cgc.generate_files({'intvar': variable_code}, namespace=['my_cfg'],
-    #                            filename=filename, include_path=include_path,
-    #                            includes=includes)
-    # print(files['header'])
-    # print()
-    # print(files['source'])
 
 if __name__ == '__main__':
     main()
