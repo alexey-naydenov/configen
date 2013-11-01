@@ -215,8 +215,11 @@ def generate_object(members):
                   'definitions': []}
     # lists to collect code parts
     member_defines = []
+    member_declarations = []
     function_declarations = []
     function_definitions = []
+    member_init = [] # accumulate calls to member init functions
+    member_validate = [] # accumulate calls to member validate functions
     for member_name, member_code in members.items():
         member_type = cu.to_camel_case(member_name)
         member_format_dict = {
@@ -225,21 +228,32 @@ def generate_object(members):
         # member predefines
         member_defines.append(
             member_code['predefine'].format_map(member_format_dict))
+        # member variables
+        member_declarations.append('{0} {1};'.format(member_type, member_name))
         # member declarations for init and validate
         function_declarations.extend(
             [member_declaration.format_map(member_format_dict)
              for member_declaration in member_code['declarations']])
-        
         # member definitions for init and validate
         function_definitions.extend(
             [member_definition.format_map(member_format_dict)
              for member_definition in member_code['definitions']])
+        # accumulate necessary member info to init and validate them
+        calls_format_dict = {'name': member_name, 'typename': member_type,
+                             'namespace': ''}
+        member_init.extend([c.format_map(calls_format_dict) 
+                            for c in cpp.init_call()])
+        member_validate.extend([c.format_map(calls_format_dict)
+                                for c in cpp.validate_call()])
     # constructor and validate
     function_declarations.extend(
         [''] + cpp.constructor_declaration() + cpp.isvalid_declaration())
+    function_definitions.extend(cpp.object_init_definition(member_init))
+    function_definitions.extend(cpp.object_validate_definition(member_validate))
     # finalize and return
-    pprint(function_declarations)
     code_parts['declarations'].extend(cpp.indent(member_defines))
+    code_parts['declarations'].append('')
+    code_parts['declarations'].extend(cpp.indent(member_declarations))
     code_parts['declarations'].append('')
     code_parts['declarations'].extend(cpp.indent(function_declarations))
     code_parts['declarations'].append('{rb}; // {typename}')

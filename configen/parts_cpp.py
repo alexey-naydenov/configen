@@ -312,7 +312,7 @@ def variable_validate_definition(schema):
     definition.append('{rb}')
     return definition
 
-# ==================== class ====================
+# ==================== object ====================
 
 def constructor_declaration():
     return ['{typename}() {lb}',
@@ -323,3 +323,30 @@ def isvalid_declaration():
     return ['bool IsValid() const {lb}',
             indent('return Validate{typename}(*this);'),
             '{rb}']
+
+def init_call():
+    return ['{namespace}Init{typename}(&value->{name});']
+
+def validate_call():
+    return ['result & = {namespace}Validate{typename}(value->{name});']
+
+def object_init_definition(member_calls):
+    definition = [
+        'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
+    body = []
+    for member_call in member_calls:
+        body.append(member_call)
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def object_validate_definition(member_calls):
+    definition = [
+        'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
+    body = ['bool result = true;']
+    for member_call in member_calls:
+        body.append(member_call)
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
