@@ -324,11 +324,15 @@ def isvalid_declaration():
             indent('return Validate{typename}(*this);'),
             '{rb}']
 
-def init_call():
-    return ['{namespace}Init{typename}(&value->{name});']
+def init_call(variable_code):
+    return ['{namespace}Init{typename}(&value->{{name}});'.format(
+        namespace = variable_code.get('namespace', '{namespace}'),
+        typename = variable_code.get('typename', '{typename}'))]
 
-def validate_call():
-    return ['result &= {namespace}Validate{typename}(value.{name});']
+def validate_call(variable_code):
+    return ['result &= {namespace}Validate{typename}(value.{{name}});'.format(
+        namespace = variable_code.get('namespace', '{namespace}'),
+        typename = variable_code.get('typename', '{typename}'))]
 
 def object_init_definition(member_calls):
     definition = [

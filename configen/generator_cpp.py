@@ -244,18 +244,10 @@ def generate_object(members):
         # accumulate necessary member info to init and validate them
         calls_format_dict = {'name': member_name, 'typename': member_type,
                              'namespace': '{typename}::'}
-        if 'init_call' in member_code:
-            member_init.extend([c.format_map(calls_format_dict) 
-                                for c in member_code['init_call']])
-        else:
-            member_init.extend([c.format_map(calls_format_dict) 
-                                for c in cpp.init_call()])
-        if 'validate_call' in member_code:
-            member_validate.extend([c.format_map(calls_format_dict) 
-                                    for c in member_code['validate_call']])
-        else:
-            member_validate.extend([c.format_map(calls_format_dict)
-                                    for c in cpp.validate_call()])
+        member_init.extend(cu.rewrite(cpp.init_call(member_code),
+                                      calls_format_dict))
+        member_validate.extend(cu.rewrite(cpp.validate_call(member_code),
+                               calls_format_dict))
     # constructor and validate
     function_declarations.extend(
         [''] + cpp.constructor_declaration() + cpp.isvalid_declaration())
@@ -283,9 +275,6 @@ def generate_reference(schema):
     else:
         namespace = ''
     code_parts['namespace'] = namespace
-    code_parts['init_call'] = [namespace + 'Init{typename}(&value->{name});']
-    code_parts['validate_call'] = ['result &= ' + namespace 
-                                   + 'Validate{typename}(value.{name});']
     return code_parts
 
 def generate_array(element, length=None):

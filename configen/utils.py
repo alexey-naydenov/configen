@@ -35,3 +35,7 @@ def calculate_int_bit_length_to_hold(value):
         if required_length <= standard_length:
             return standard_length
     return _STANDARD_LENGTHS[-1]
+
+
+def rewrite(templates_list, format_dict):
+    return [t.format_map(format_dict) for t in templates_list]
