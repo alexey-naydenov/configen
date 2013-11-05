@@ -165,7 +165,7 @@ def generate_header(name_code_dict, namespace=None, includes=None,
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
-        header.append(code['predefine'].format_map(format_dict))
+        header.extend([p.format_map(format_dict) for p in code['predefine']])
     # header declarations
     for name, code in name_code_dict.items():
         format_dict = {}
@@ -199,8 +199,8 @@ def generate_source(name_code_dict, namespace=None, includes=None,
 
 def generate_variable(schema):
     code_parts = {}
-    code_parts['predefine'] = ('typedef ' + cpp.to_cpp_type(schema) 
-                               + ' {typename};')
+    code_parts['predefine'] = [('typedef ' + cpp.to_cpp_type(schema) 
+                               + ' {typename};')]
     code_parts['declarations'] = [cpp.init_declaration(),
                                   cpp.validate_declaration()]
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
@@ -208,7 +208,7 @@ def generate_variable(schema):
     return code_parts
 
 def generate_object(members):
-    code_parts = {'predefine': 'struct {typename};',
+    code_parts = {'predefine': ['struct {typename};'],
                   'declarations': [cpp.init_declaration(), 
                                    cpp.validate_declaration(), '', 
                                    'struct {typename} {lb}'],
@@ -224,13 +224,13 @@ def generate_object(members):
         if 'typename' in member_code:
             member_type = member_code['typename'] 
         else:
-            member_type = member_cu.to_camel_case(member_name)
+            member_type = cu.to_camel_case(member_name)
         member_format_dict = {
             'namespace': '{namespace}{typename}::', 'function_prefix': 'static ', 
             'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
         # member predefines
-        member_defines.append(
-            member_code['predefine'].format_map(member_format_dict))
+        member_defines.extend([p.format_map(member_format_dict) 
+                               for p in member_code['predefine']])
         # member variables
         member_declarations.append('{0} {1};'.format(member_type, member_name))
         # member declarations for init and validate
@@ -272,7 +272,7 @@ def generate_object(members):
     return code_parts
 
 def generate_reference(schema):
-    code_parts = {'predefine': '',
+    code_parts = {'predefine': [],
                   'declarations': [],
                   'definitions': []}
     namespace_list = [cu.to_camel_case(name) 
@@ -285,6 +285,30 @@ def generate_reference(schema):
     code_parts['init_call'] = [namespace + 'Init{typename}(&value->{name});']
     code_parts['validate_call'] = ['result &= ' + namespace 
                                    + 'Validate{typename}(value.{name});']
+    return code_parts
+
+def generate_array(element, length=None):
+    code_parts = {'declarations': [], 'definitions': []}
+    # predefines
+    element_typename = '{typename}Element'
+    code_parts['predefine'] = [p.format(typename=element_typename)
+                               for p in element['predefine']]
+    code_parts['predefine'].append('typedef std::vector<' + element_typename
+                                   + '> {typename};')
+    # copy declarations and add array declarations
+    element_format_dict = {'typename': element_typename, 
+                           'namespace': '{namespace}',
+                           'function_prefix': '{function_prefix}',
+                           'lb': '{lb}', 'rb': '{rb}'}
+    code_parts['declarations'].extend(
+        [d.format_map(element_format_dict) for d in element['declarations']])
+    code_parts['declarations'].extend([
+        cpp.init_declaration(), cpp.validate_declaration()])
+    # definitions
+    code_parts['definitions'].extend([c.format_map(element_format_dict) 
+                                      for c in element['definitions']])
+    code_parts['definitions'].extend(
+        cpp.array_init_definition(element_typename, length))
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']

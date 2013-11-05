@@ -350,3 +350,16 @@ def object_validate_definition(member_calls):
     definition.extend(indent(body))
     definition.append('{rb}')
     return definition
+
+def array_init_definition(typename, length=None):
+    definition = [
+        'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
+    if length is not None:
+        body = []
+        body.extend(['value->resize({0});'.format(length),
+                     ('for (int i = 0; i != {length}; ++i) '
+                      'Init{typename}(&(*value)[i]);').format(
+                          length=length, typename=typename)])
+        definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition

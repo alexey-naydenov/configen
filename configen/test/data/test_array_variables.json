@@ -4,13 +4,16 @@
 	"properties": {
 	    "modules": {
 		"type": "array",
-		"maxItems": 10,
 		"items": {
-		    "type": "integer",
-		    "default": 100,
-		    "minimum": 10,
-		    "maximum": 1000
-		}	
+		    "type": "array",
+		    "maxItems": 10,
+		    "items": {
+			"type": "integer",
+			"default": 100,
+			"minimum": 10,
+			"maximum": 1000
+		    }
+		}
 	    }
 	}
     }
