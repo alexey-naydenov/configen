@@ -351,15 +351,31 @@ def object_validate_definition(member_calls):
     definition.append('{rb}')
     return definition
 
-def array_init_definition(typename, length=None):
+def array_init_definition(typename, length=None, element_ns=None):
+    element_ns = element_ns if element_ns is not None else ''
     definition = [
         'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
     if length is not None:
         body = []
         body.extend(['value->resize({0});'.format(length),
                      ('for (int i = 0; i != {length}; ++i) '
-                      'Init{typename}(&(*value)[i]);').format(
-                          length=length, typename=typename)])
+                      '{namespace}Init{typename}(&(*value)[i]);').format(
+                          length=length, typename=typename,
+                          namespace=element_ns)])
         definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def array_validate_definition(typename, element_ns=None):
+    element_ns = element_ns if element_ns is not None else ''
+    definition = [
+        'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
+    body = ['bool result = true;'
+            'for (int i = 0; i != value.size(); ++i) {lb}',
+            indent('result &= {namespace}Validate{typename}(value[i]);'.format(
+                typename=typename, namespace=element_ns)),
+            '{rb}',
+            'return result;']
+    definition.extend(indent(body))
     definition.append('{rb}')
     return definition

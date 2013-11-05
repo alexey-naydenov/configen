@@ -282,6 +282,7 @@ def generate_reference(schema):
         namespace = '::'.join(namespace_list[:-1]) + '::'
     else:
         namespace = ''
+    code_parts['namespace'] = namespace
     code_parts['init_call'] = [namespace + 'Init{typename}(&value->{name});']
     code_parts['validate_call'] = ['result &= ' + namespace 
                                    + 'Validate{typename}(value.{name});']
@@ -308,7 +309,11 @@ def generate_array(element, length=None):
     code_parts['definitions'].extend([c.format_map(element_format_dict) 
                                       for c in element['definitions']])
     code_parts['definitions'].extend(
-        cpp.array_init_definition(element_typename, length))
+        cpp.array_init_definition(element_typename, length, 
+                                  element.get('namespace', '')))
+    code_parts['definitions'].extend(
+        cpp.array_validate_definition(element_typename, 
+                                      element.get('namespace', '')))
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']
