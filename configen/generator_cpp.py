@@ -291,7 +291,8 @@ def generate_reference(schema):
 def generate_array(element, length=None):
     code_parts = {'declarations': [], 'definitions': []}
     # predefines
-    element_typename = '{typename}Element'
+    element_typename = element.get('typename', '{typename}Element')
+    element_ns = element.get('namespace', '')
     code_parts['predefine'] = [p.format(typename=element_typename)
                                for p in element['predefine']]
     code_parts['predefine'].append('typedef std::vector<' + element_typename
@@ -309,11 +310,9 @@ def generate_array(element, length=None):
     code_parts['definitions'].extend([c.format_map(element_format_dict) 
                                       for c in element['definitions']])
     code_parts['definitions'].extend(
-        cpp.array_init_definition(element_typename, length, 
-                                  element.get('namespace', '')))
+        cpp.array_init_definition(element_typename, length, element_ns))
     code_parts['definitions'].extend(
-        cpp.array_validate_definition(element_typename, 
-                                      element.get('namespace', '')))
+        cpp.array_validate_definition(element_typename, element_ns))
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector']

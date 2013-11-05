@@ -1,0 +1,19 @@
+{
+    "an_int": {
+	"type": "integer",
+	"default": 100,
+	"minimum": 10,
+	"maximum": 1000
+    },
+    "an_object": {
+	"type": "object",
+	"properties": { 
+	    "an_array": {
+		"type": "array",
+		"items": {"$ref": "an_int"}
+	    }
+	}
+    }
+}
+
+
