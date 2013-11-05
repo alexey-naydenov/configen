@@ -374,7 +374,7 @@ def array_validate_definition(typename, element_ns=None):
     element_ns = element_ns if element_ns is not None else ''
     definition = [
         'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
-    body = ['bool result = true;'
+    body = ['bool result = true;',
             'for (int i = 0; i != value.size(); ++i) {lb}',
             indent('result &= {namespace}Validate{typename}(value[i]);'.format(
                 typename=typename, namespace=element_ns)),
