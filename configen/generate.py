@@ -43,8 +43,7 @@ def convert_schema(generator_module, schema):
             return generator_module.generate_object(members)
         if schema['type'] == 'array':
             array_element = convert_schema(generator_module, schema['items'])
-            return generator_module.generate_array(array_element,
-                                                   schema.get('maxItems'))
+            return generator_module.generate_array(array_element, schema)
     if '$ref' in schema:
         return generator_module.generate_reference(schema)
     # unknown type

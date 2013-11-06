@@ -279,13 +279,14 @@ def generate_reference(schema):
     code_parts['namespace'] = namespace
     return code_parts
 
-def generate_array(element, length=None):
+def generate_array(element, schema):
+    length = schema.get('maxItems', None)
     code_parts = {'declarations': [], 'definitions': []}
     # predefines
     element_typename = element.get('typename', '{typename}Element')
     element_ns = element.get('namespace', '')
-    code_parts['predefine'] = [p.format(typename=element_typename)
-                               for p in element['predefine']]
+    code_parts['predefine'] = cu.rewrite(element['predefine'],
+                                         {'typename': element_typename})
     code_parts['predefine'].append('typedef std::vector<' + element_typename
                                    + '> {typename};')
     # copy declarations and add array declarations
@@ -293,17 +294,18 @@ def generate_array(element, length=None):
                            'namespace': '{namespace}',
                            'function_prefix': '{function_prefix}',
                            'lb': '{lb}', 'rb': '{rb}'}
-    code_parts['declarations'].extend(
-        [d.format_map(element_format_dict) for d in element['declarations']])
-    code_parts['declarations'].extend(cpp.init_declaration() 
-                                      + cpp.validate_declaration())
+    code_parts['declarations'].extend(cu.rewrite(element['declarations'],
+                                                 element_format_dict))
+    code_parts['declarations'].extend([''] + cpp.init_declaration() 
+                                      + cpp.validate_declaration()
+                                      + cpp.conversion_declaration())
     # definitions
-    code_parts['definitions'].extend([c.format_map(element_format_dict) 
-                                      for c in element['definitions']])
+    code_parts['definitions'].extend(cu.rewrite(element['definitions'],
+                                                element_format_dict))
     code_parts['definitions'].extend(
         cpp.array_init_definition(element_typename, length, element_ns))
     code_parts['definitions'].extend(
-        cpp.array_validate_definition(element_typename, element_ns))
+        cpp.array_validate_definition(element_typename, schema, element_ns))
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector', 'cJSON.h']

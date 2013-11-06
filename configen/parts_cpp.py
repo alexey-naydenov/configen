@@ -363,7 +363,7 @@ def variable_validate_definition(schema):
 
 def conversion_declaration():
     return ['{function_prefix}bool {typename}ToJson(const {typename} &value, cJSON **node);',
-            '{function_prefix}bool JsonTo{typename}(const cJSON *noide, {typename} *value);']
+            '{function_prefix}bool JsonTo{typename}(const cJSON *node, {typename} *value);']
 
 _TYPE_NODE_CREATE_DICT = {
     'bool': 'cJSON_CreateBool(value)', 
@@ -452,8 +452,7 @@ def array_init_definition(typename, length=None, element_ns=None):
     definition.append('{rb}')
     return definition
 
-def array_validate_definition(typename, element_ns=None):
-    element_ns = element_ns if element_ns is not None else ''
+def _array_validate_value(typename, element_ns):
     definition = [
         'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
     body = ['bool result = true;',
@@ -465,3 +464,32 @@ def array_validate_definition(typename, element_ns=None):
     definition.extend(indent(body))
     definition.append('{rb}')
     return definition
+
+def _array_validate_json(typename, schema, element_ns):
+    definition = [
+        'bool {namespace}Validate{typename}(const cJSON *node) {lb}']
+    # check type and length
+    body = ['bool result = true;'] + _json_type_check(schema)
+    body.append('unsigned array_length = cJSON_GetArraySize(const_cast<cJSON *>(node));')
+    if 'minItems' in schema:
+        body.append('if (array_length < ' + str(schema['minItems']) + ') return false;')
+    if 'maxItems' in schema:
+        body.append('if (array_length > ' + str(schema['maxItems']) + ') return false;')
+    # check each element
+    body.extend([
+        'cJSON *child = node->child;',
+        'while (child) {lb}',
+        indent('result &= {namespace}Validate{typename}(child);'.format(
+            typename=typename, namespace=element_ns)),
+        indent('child = child->next;'),
+        '{rb}'])
+    # finalize
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def array_validate_definition(typename, schema, element_ns=None):
+    element_ns = element_ns if element_ns is not None else ''
+    return _array_validate_value(typename, element_ns) \
+        + _array_validate_json(typename, schema, element_ns)
