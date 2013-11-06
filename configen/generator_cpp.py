@@ -201,10 +201,12 @@ def generate_variable(schema):
     code_parts = {}
     code_parts['predefine'] = [('typedef ' + cpp.to_cpp_type(schema) 
                                + ' {typename};')]
-    code_parts['declarations'] = (cpp.init_declaration()
-                                  + cpp.validate_declaration())
+    code_parts['declarations'] = ([''] + cpp.init_declaration()
+                                  + cpp.validate_declaration() 
+                                  + cpp.conversion_declaration())
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
-                                 + cpp.variable_validate_definition(schema))
+                                 + cpp.variable_validate_definition(schema)
+                                 + cpp.variable_conversion_definition(schema))
     return code_parts
 
 def generate_object(members):

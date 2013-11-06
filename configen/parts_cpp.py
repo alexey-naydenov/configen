@@ -359,6 +359,41 @@ def _variable_validate_json(schema):
 def variable_validate_definition(schema):
     return _variable_validate_value(schema) + _variable_validate_json(schema)
 
+# ==================== conversion ====================
+
+def conversion_declaration():
+    return ['{function_prefix}bool {typename}ToJson(const {typename} &value, cJSON **node);',
+            '{function_prefix}bool JsonTo{typename}(const cJSON *noide, {typename} *value);']
+
+_TYPE_NODE_CREATE_DICT = {
+    'bool': 'cJSON_CreateBool(value)', 
+    'integer': 'cJSON_CreateNumber(value)', 
+    'number': 'cJSON_CreateNumber(value)',
+    'string': 'cJSON_CreateString(value.c_str())'}
+
+def _value_json_conversion(schema):
+    definition = [('bool {namespace}{typename}ToJson('
+                   'const {namespace}{typename} &value, cJSON **node) {lb}')]
+    body = ['cJSON *new_node = ' + _TYPE_NODE_CREATE_DICT[schema['type']] + ';',
+            '*node = new_node;',
+            'return true;']
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def _json_value_conversion(schema):
+    definition = [('bool {namespace}JsonTo{typename}('
+                   'const cJSON *node, {namespace}{typename} *value) {lb}')]
+    body = _json_type_check(schema)
+    body.append('*value = ' + _TYPE_VALUE_FIELD_DICT[schema['type']] + ';')
+    body.append('return true;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def variable_conversion_definition(schema):
+    return _value_json_conversion(schema) + _json_value_conversion(schema)
+
 # ==================== object ====================
 
 def constructor_declaration():
