@@ -94,9 +94,9 @@ def _init_declaration(name, prefix=None):
     else:
         prefix = prefix + ' '
     type_name = to_type_name(name)
-    return '{prefix}void {ns}Init{name}({ns}{name} *val)'.format(
+    return ['{prefix}void {ns}Init{name}({ns}{name} *val)'.format(
         name=type_name[-1], ns=to_namespace_prefix(type_name[:-1]),
-        prefix=prefix)
+        prefix=prefix)]
 
 
 def _validate_declaration(name, prefix=None):
@@ -278,27 +278,56 @@ def to_cpp_type(schema):
 # ==================== init ====================
 
 def init_declaration():
-    return '{function_prefix}void Init{typename}({typename} *value);'
+    return ['{function_prefix}void Init{typename}({typename} *value);']
 
 
 def variable_init_definition(schema):
     definition = [
         'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
     if 'default' in schema:
+        default = schema['default']
+        default_as_string = str(default)
+        if isinstance(default, bool):
+            default_as_string = default_as_string.lower()
+        if isinstance(default, str):
+            default_as_string = '"' + default_as_string + '"'
         definition.append(
-            indent('*value = {0};'.format(str(schema['default']))))
+            indent('*value = {0};'.format(default_as_string)))
     definition.append('{rb}')
     return definition
 
 # ==================== validate ====================
 
 def validate_declaration():
-    return '{function_prefix}bool Validate{typename}(const {typename} &value);'
+    return ['{function_prefix}bool Validate{typename}(const {typename} &value);',
+            '{function_prefix}bool Validate{typename}(const cJSON *node);']
 
 _CHECK_TEMPLATES = {'minimum': '(value >= {minimum});',
                     'maximum': '(value <= {maximum});'}
 
-def variable_validate_definition(schema):
+_TYPE_CHECK_DICT = {
+    'bool': 'node->type == cJSON_False || node->type == cJSON_True', 
+    'integer': 'node->type == cJSON_Number', 
+    'number': 'node->type == cJSON_Number',
+    'string': 'node->type == cJSON_String',
+    'object': 'node->type == cJSON_Object',
+    'array': 'node->type == cJSON_Array'}
+
+_TYPE_VALUE_FIELD_DICT = {
+    'bool': 'node->type == cJSON_True ? true : false', 
+    'integer': 'node->valueint', 
+    'number': 'node->valuedouble',
+    'string': 'node->valuestring'}
+
+def _json_type_check(schema):
+    """Generate code that checks for correct json type."""
+    return ['if (!(' + _TYPE_CHECK_DICT[schema['type']] + ')) return false;']
+
+def _json_extract_value(schema):
+    """Generate code that copies json value into a variable."""
+    return ['{typename} value = ' + _TYPE_VALUE_FIELD_DICT[schema['type']]+ ';']
+
+def _variable_validate_value(schema):
     definition = [
         'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
     body = ['bool result = true;']
@@ -311,6 +340,24 @@ def variable_validate_definition(schema):
     definition.extend(indent(body))
     definition.append('{rb}')
     return definition
+
+def _variable_validate_json(schema):
+    definition = [
+        'bool {namespace}Validate{typename}(const cJSON *node) {lb}']
+    body = ['bool result = true;'] + _json_type_check(schema) \
+           + _json_extract_value(schema)
+    checks = []
+    for property_key, check_template in _CHECK_TEMPLATES.items():
+        if property_key in schema:
+            checks.append(check_template.format_map(schema));
+    body.extend(['result &= ' + c for c in checks])
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def variable_validate_definition(schema):
+    return _variable_validate_value(schema) + _variable_validate_json(schema)
 
 # ==================== object ====================
 

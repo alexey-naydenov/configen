@@ -1,4 +1,8 @@
 {
+    "a_bool": {
+	"type": "bool",
+	"default": true
+    },
     "an_int": {
 	"type": "integer",
 	"default": 100,
@@ -8,6 +12,10 @@
     "a_number": {
 	"type": "number",
 	"default": 123.123
+    },
+    "a_string": {
+	"type": "string",
+	"default": "some string"
     }
 }
 

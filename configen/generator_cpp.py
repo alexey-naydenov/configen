@@ -201,17 +201,17 @@ def generate_variable(schema):
     code_parts = {}
     code_parts['predefine'] = [('typedef ' + cpp.to_cpp_type(schema) 
                                + ' {typename};')]
-    code_parts['declarations'] = [cpp.init_declaration(),
-                                  cpp.validate_declaration()]
+    code_parts['declarations'] = (cpp.init_declaration()
+                                  + cpp.validate_declaration())
     code_parts['definitions'] = (cpp.variable_init_definition(schema)
                                  + cpp.variable_validate_definition(schema))
     return code_parts
 
 def generate_object(members):
     code_parts = {'predefine': ['struct {typename};'],
-                  'declarations': [cpp.init_declaration(), 
-                                   cpp.validate_declaration(), '', 
-                                   'struct {typename} {lb}'],
+                  'declarations': (cpp.init_declaration() 
+                                   + cpp.validate_declaration()
+                                   + [''] + ['struct {typename} {lb}']),
                   'definitions': []}
     # lists to collect code parts
     member_defines = []
@@ -293,8 +293,8 @@ def generate_array(element, length=None):
                            'lb': '{lb}', 'rb': '{rb}'}
     code_parts['declarations'].extend(
         [d.format_map(element_format_dict) for d in element['declarations']])
-    code_parts['declarations'].extend([
-        cpp.init_declaration(), cpp.validate_declaration()])
+    code_parts['declarations'].extend(cpp.init_declaration() 
+                                      + cpp.validate_declaration())
     # definitions
     code_parts['definitions'].extend([c.format_map(element_format_dict) 
                                       for c in element['definitions']])
@@ -304,7 +304,7 @@ def generate_array(element, length=None):
         cpp.array_validate_definition(element_typename, element_ns))
     return code_parts
 
-_INCLUDES = ['stdint.h', 'string', 'vector']
+_INCLUDES = ['stdint.h', 'string', 'vector', 'cJSON.h']
 
 def generate_files(name_code_dict, filename=None, namespace=None,
                    include_path=None):

@@ -8,13 +8,14 @@ import configen.generate as cg
 import configen.generator_cpp as cgc
 
 def main():
-    compile_cpp = sh.Command('/usr/bin/g++')
     filename = 'my_config'
     include_path = 'inc'
     includes = ['stdint.h', 'vector', 'string']
     test_path = '/home/leha/personal/configen/configen/test/data'
+    test_files = glob(os.path.join(test_path, '*.json'))
+    test_files = [os.path.join(test_path, 'test_variable.json')]
     # iterate over all files in test directory
-    for test_filename in glob(os.path.join(test_path, '*.json')):
+    for test_filename in test_files:
         print('Test file: ' + os.path.basename(test_filename))
         string_of_json = open(test_filename, 'r').read()
         code = cg.convert_json(string_of_json, language='c++',
@@ -31,6 +32,6 @@ def main():
                 'int main() {',
                 '  return 0;',
                 '}']))
-        compile_cpp('-I' + str(sh.pwd())[:-1], 'main.cc', filename + '.cc')
+        sh.make()
 if __name__ == '__main__':
     main()
