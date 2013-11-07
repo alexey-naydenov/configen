@@ -493,3 +493,42 @@ def array_validate_definition(typename, schema, element_ns=None):
     element_ns = element_ns if element_ns is not None else ''
     return _array_validate_value(typename, element_ns) \
         + _array_validate_json(typename, schema, element_ns)
+
+def _array_json_conversion(element_typename, schema, element_ns):
+    definition = [('bool {namespace}{typename}ToJson('
+                   'const {namespace}{typename} &value, cJSON **node) {lb}')]
+    body = ['cJSON *new_node = cJSON_CreateArray();',
+            'if (new_node == NULL) return false;',
+            'for (unsigned i = 0; i != value.size(); ++i) {lb}',
+            indent('cJSON *item;'),
+            indent('if (!{namespace}{typename}ToJson(value[i], &item)) '
+                   'return false;').format(namespace=element_ns,
+                                           typename=element_typename),
+            indent('cJSON_AddItemToArray(new_node, item);'),
+            '{rb}']
+    body.extend(['*node = new_node;', 'return true;'])
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def _json_array_conversion(element_typename, schema, element_ns):
+    definition = [('bool {namespace}JsonTo{typename}('
+                   'const cJSON *node, {namespace}{typename} *value) {lb}')]
+    body = _json_type_check(schema)
+    body.extend([
+        'value->resize(cJSON_GetArraySize(const_cast<cJSON *>(node)));',
+        'cJSON *child = node->child;',
+        'for (unsigned i = 0; i != value->size(); ++i) {lb}',
+        indent('{namespace}JsonTo{typename}(child, &(*value)[i]);'.format(
+            typename=element_typename, namespace=element_ns)),
+        indent('child = child->next;'),
+        '{rb}'])
+    body.append('return true;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def array_conversion_definition(element_typename, schema, element_ns=None):
+    element_ns = element_ns if element_ns is not None else ''
+    return _array_json_conversion(element_typename, schema, element_ns) \
+        + _json_array_conversion(element_typename, schema, element_ns)

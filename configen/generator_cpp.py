@@ -303,9 +303,9 @@ def generate_array(element, schema):
     code_parts['definitions'].extend(cu.rewrite(element['definitions'],
                                                 element_format_dict))
     code_parts['definitions'].extend(
-        cpp.array_init_definition(element_typename, length, element_ns))
-    code_parts['definitions'].extend(
-        cpp.array_validate_definition(element_typename, schema, element_ns))
+        cpp.array_init_definition(element_typename, length, element_ns)
+        + cpp.array_validate_definition(element_typename, schema, element_ns)
+        + cpp.array_conversion_definition(element_typename, schema, element_ns))
     return code_parts
 
 _INCLUDES = ['stdint.h', 'string', 'vector', 'cJSON.h']
