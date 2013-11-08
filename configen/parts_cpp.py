@@ -501,8 +501,30 @@ def _object_json_conversion(children):
     definition.append('{rb}')
     return definition
 
-def _json_object_conversion(members):
-    return []
+def _json_object_conversion(children):
+    definition = [('bool {namespace}JsonTo{typename}('
+                   'const cJSON *node, {namespace}{typename} *value) {lb}')]
+    body = _json_type_check({'type': 'object'})
+    body.append(
+        'for (cJSON *child = node->child; child; child = child->next) {lb}')
+    conversions = []
+    for child_name, child_code in children.items():
+        child_type = child_code.get('typename', cu.to_camel_case(child_name))
+        child_namespace = child_code.get('namespace', '{typename}::')
+        conversions.append(
+            'if (strcmp(child->string, "{0}") == 0) {{lb}}'.format(child_name))
+        conversions.append(indent(
+            '{namespace}JsonTo{typename}(child, &(value->{name}));'.format(
+                name=child_name, typename=child_type,
+                namespace=child_namespace)))
+        conversions.append(indent('continue;'))
+        conversions.append('{rb}')
+    body.extend(indent(conversions))
+    body.append('{rb}')
+    body.append('return true;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
 
 def object_conversion_definition(members):
     return _object_json_conversion(members) + _json_object_conversion(members)
