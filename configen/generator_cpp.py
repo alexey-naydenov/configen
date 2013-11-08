@@ -213,6 +213,7 @@ def generate_object(members):
     code_parts = {'predefine': ['struct {typename};'],
                   'declarations': (cpp.init_declaration() 
                                    + cpp.validate_declaration()
+                                   + cpp.conversion_declaration()
                                    + [''] + ['struct {typename} {lb}']),
                   'definitions': []}
     # lists to collect code parts
@@ -231,18 +232,16 @@ def generate_object(members):
             'namespace': '{namespace}{typename}::', 'function_prefix': 'static ', 
             'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
         # member predefines
-        member_defines.extend([p.format_map(member_format_dict) 
-                               for p in member_code['predefine']])
+        member_defines.extend(cu.rewrite(member_code['predefine'],
+                                         member_format_dict))
         # member variables
         member_declarations.append('{0} {1};'.format(member_type, member_name))
         # member declarations for init and validate
-        function_declarations.extend(
-            [member_declaration.format_map(member_format_dict)
-             for member_declaration in member_code['declarations']])
+        function_declarations.extend(cu.rewrite(member_code['declarations'],
+                                                member_format_dict))
         # member definitions for init and validate
-        function_definitions.extend(
-            [member_definition.format_map(member_format_dict)
-             for member_definition in member_code['definitions']])
+        function_definitions.extend(cu.rewrite(member_code['definitions'],
+                                               member_format_dict))
         # accumulate necessary member info to init and validate them
         calls_format_dict = {'name': member_name, 'typename': member_type,
                              'namespace': '{typename}::'}
@@ -252,9 +251,11 @@ def generate_object(members):
                                calls_format_dict))
     # constructor and validate
     function_declarations.extend(
-        [''] + cpp.constructor_declaration() + cpp.isvalid_declaration())
+        [''] + cpp.constructor_declaration() + cpp.isvalid_declaration()
+        + cpp.object_json_declarations())
     function_definitions.extend(cpp.object_init_definition(member_init))
-    function_definitions.extend(cpp.object_validate_definition(member_validate))
+    function_definitions.extend(
+        cpp.object_validate_definition(member_validate, members))
     # finalize and return
     code_parts['declarations'].extend(cpp.indent(member_defines))
     code_parts['declarations'].append('')
@@ -308,7 +309,7 @@ def generate_array(element, schema):
         + cpp.array_conversion_definition(element_typename, schema, element_ns))
     return code_parts
 
-_INCLUDES = ['stdint.h', 'string', 'vector', 'cJSON.h']
+_INCLUDES = ['stdint.h', 'string.h', 'string', 'vector', 'cJSON.h']
 
 def generate_files(name_code_dict, filename=None, namespace=None,
                    include_path=None):

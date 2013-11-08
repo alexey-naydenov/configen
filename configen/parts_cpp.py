@@ -406,6 +406,19 @@ def isvalid_declaration():
             indent('return Validate{typename}(*this);'),
             '{rb}']
 
+def object_json_declarations():
+    return ['static bool IsJsonValid(const cJSON *node) {lb}',
+            indent('return Validate{typename}(node);'),
+            '{rb}',
+            'cJSON *ToJson() const {lb}',
+            indent('cJSON *node;'),
+            indent('{typename}ToJson(*this, &node);'),
+            indent('return node;'),
+            '{rb}',
+            'bool FromJson(const cJSON *node) {lb}',
+            indent('return JsonTo{typename}(node, this);'),
+            '{rb}']
+
 def init_call(variable_code):
     return ['{namespace}Init{typename}(&value->{{name}});'.format(
         namespace = variable_code.get('namespace', '{namespace}'),
@@ -426,7 +439,7 @@ def object_init_definition(member_calls):
     definition.append('{rb}')
     return definition
 
-def object_validate_definition(member_calls):
+def _object_validate_value(member_calls):
     definition = [
         'bool {namespace}Validate{typename}(const {namespace}{typename} &value) {lb}']
     body = ['bool result = true;']
@@ -436,6 +449,35 @@ def object_validate_definition(member_calls):
     definition.extend(indent(body))
     definition.append('{rb}')
     return definition
+
+def _object_validate_json(children):
+    definition = [
+        'bool {namespace}Validate{typename}(const cJSON *node) {lb}']
+    body = ['bool result = true;'] + _json_type_check({'type': 'object'})
+    # check each element
+    body.append(
+        'for (cJSON *child = node->child; child; child = child->next) {lb}')
+    checks = []
+    for child_name, child_code in children.items():
+        child_type = child_code.get('typename', cu.to_camel_case(child_name))
+        child_namespace = child_code.get('namespace', '{typename}::')
+        checks.append(
+            'if (strcmp(child->string, "{0}") == 0) {{lb}}'.format(child_name))
+        checks.append(indent(
+            'result &= {namespace}Validate{typename}(child);'.format(
+                typename=child_type, namespace=child_namespace)))
+        checks.append(indent('continue;'))
+        checks.append('{rb}')
+    body.extend(indent(checks))
+    body.append('{rb}')
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def object_validate_definition(member_calls, children):
+    return _object_validate_value(member_calls) \
+        + _object_validate_json(children)
 
 def array_init_definition(typename, length=None, element_ns=None):
     element_ns = element_ns if element_ns is not None else ''
