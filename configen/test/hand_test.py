@@ -13,7 +13,7 @@ def main():
     includes = ['stdint.h', 'vector', 'string']
     test_path = '/home/leha/personal/configen/configen/test/data'
     test_files = glob(os.path.join(test_path, '*.json'))
-    test_files = [os.path.join(test_path, 'test_object_variables.json')]
+    #test_files = [os.path.join(test_path, 'test_object_variables.json')]
     # iterate over all files in test directory
     for test_filename in test_files:
         print('Test file: ' + os.path.basename(test_filename))
