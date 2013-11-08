@@ -1,3 +1,4 @@
+import sys
 import os.path
 from glob import glob
 import sh
@@ -15,6 +16,7 @@ def main():
     test_files = glob(os.path.join(test_path, '*.json'))
     #test_files = [os.path.join(test_path, 'test_object_variables.json')]
     # iterate over all files in test directory
+    run_main = sh.Command('./configen_test')
     for test_filename in test_files:
         print('Test file: ' + os.path.basename(test_filename))
         string_of_json = open(test_filename, 'r').read()
@@ -29,9 +31,15 @@ def main():
         with open('main.cc', 'w') as main_:
             main_.write('\n'.join([
                 '#include <inc/{0}.h>'.format(filename),
+                '#include <cassert>',
                 'int main() {',
+                '  assert(false);'
                 '  return 0;',
                 '}']))
         sh.make()
+        output = run_main()
+        if output.exit_code != 0:
+            print(output.stderr.decode('utf-8'))
+            sys.exit(1)
 if __name__ == '__main__':
     main()

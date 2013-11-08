@@ -401,6 +401,12 @@ def constructor_declaration():
             indent('Init{typename}(this);'),
             '{rb}']
 
+def object_comparison_declaration():
+    return ['bool operator==(const {typename} &other) const;',
+            'bool operator!=(const {typename} &other) const {lb}',
+            indent('return !(*this == other);'),
+            '{rb}']
+
 def isvalid_declaration():
     return ['bool IsValid() const {lb}',
             indent('return Validate{typename}(*this);'),
