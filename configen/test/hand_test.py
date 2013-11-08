@@ -8,38 +8,42 @@ from pprint import pprint
 import configen.generate as cg
 import configen.generator_cpp as cgc
 
+DEFAULT_MAIN = ['#include <inc/my_config.h>',
+                'int main() {',
+                '  return 0;',
+                '}']
+
 def main():
     filename = 'my_config'
     include_path = 'inc'
-    includes = ['stdint.h', 'vector', 'string']
     test_path = '/home/leha/personal/configen/configen/test/data'
     test_files = glob(os.path.join(test_path, '*.json'))
-    #test_files = [os.path.join(test_path, 'test_object_variables.json')]
+    test_files = [os.path.join(test_path, 'test_variable.json')]
     # iterate over all files in test directory
     run_main = sh.Command('./configen_test')
     for test_filename in test_files:
-        print('Test file: ' + os.path.basename(test_filename))
+        test_name = os.path.basename(test_filename).split('.')[0]
+        print('Test file: ' + test_name)
         string_of_json = open(test_filename, 'r').read()
         code = cg.convert_json(string_of_json, language='c++',
-                               namespace=['mycfg'], filename=filename,
+                               namespace=['config'], filename=filename,
                                include_path=include_path);
         # write header, source and main
         with open(os.path.join(include_path, filename + '.h'), 'w') as header:
             header.write(code['header'])
         with open(os.path.join(filename + '.cc'), 'w') as src:
             src.write(code['source'])
-        with open('main.cc', 'w') as main_:
-            main_.write('\n'.join([
-                '#include <inc/{0}.h>'.format(filename),
-                '#include <cassert>',
-                'int main() {',
-                '  assert(false);'
-                '  return 0;',
-                '}']))
+        main_filename = os.path.join(test_path, test_name + '.cc')
+        if os.path.exists(main_filename):
+            sh.cp(main_filename, 'main.cc')
+        else:
+            with open('main.cc', 'w') as main_:
+                main_.write('\n'.join(DEFAULT_MAIN))
         sh.make()
         output = run_main()
         if output.exit_code != 0:
             print(output.stderr.decode('utf-8'))
             sys.exit(1)
+
 if __name__ == '__main__':
     main()
