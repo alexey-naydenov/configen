@@ -479,6 +479,34 @@ def object_validate_definition(member_calls, children):
     return _object_validate_value(member_calls) \
         + _object_validate_json(children)
 
+def _object_json_conversion(children):
+    definition = [('bool {namespace}{typename}ToJson('
+                   'const {namespace}{typename} &value, cJSON **node) {lb}')]
+    body = ['cJSON *new_node = cJSON_CreateObject();',
+            'if (new_node == NULL) return false;',
+            'bool rc;',
+            'cJSON *child;']
+    for child_name, child_code in children.items():
+        child_type = child_code.get('typename', cu.to_camel_case(child_name))
+        child_namespace = child_code.get('namespace', '{typename}::')
+        body.extend([
+            'child = NULL;',
+            'rc = {namespace}{typename}ToJson(value.{name}, &child);'.format(
+                name=child_name, namespace=child_namespace,
+                typename=child_type),
+            'if (!rc || child == NULL) return false;',
+            'cJSON_AddItemToObject(new_node, "{0}", child);'.format(child_name)])
+    body.extend(['*node = new_node;', 'return true;'])
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition
+
+def _json_object_conversion(members):
+    return []
+
+def object_conversion_definition(members):
+    return _object_json_conversion(members) + _json_object_conversion(members)
+
 def array_init_definition(typename, length=None, element_ns=None):
     element_ns = element_ns if element_ns is not None else ''
     definition = [
