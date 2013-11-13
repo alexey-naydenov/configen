@@ -425,6 +425,22 @@ def object_json_declarations():
             indent('return JsonTo{typename}(node, this);'),
             '{rb}']
 
+def object_string_declarations():
+    return ['std::string ToString() const {lb}',
+            indent('return JsonToString(ToJson());'),
+            '{rb}',
+            'bool FromString(const std::string &serialized, bool validate = true) {lb}',
+            indent('cJSON *node = StringToJson(serialized);'),
+            indent('if (node == NULL) return false;'),
+            indent('if (validate && !IsJsonValid(node)) {lb}'),
+            indent('cJSON_Delete(node);', 2),
+            indent('return false;', 2),
+            indent('{rb}'),
+            indent('bool rc = FromJson(node);'),
+            indent('cJSON_Delete(node);'),
+            indent('return rc;'),
+            '{rb}']
+
 def init_call(variable_code):
     return ['{namespace}Init{typename}(&value->{{name}});'.format(
         namespace = variable_code.get('namespace', '{namespace}'),
@@ -630,3 +646,31 @@ def array_conversion_definition(element_typename, schema, element_ns=None):
     element_ns = element_ns if element_ns is not None else ''
     return _array_json_conversion(element_typename, schema, element_ns) \
         + _json_array_conversion(element_typename, schema, element_ns)
+
+def json_to_string_declaration():
+    """Generate function that convert json node to string and cleans up."""
+    return ['std::string JsonToString(cJSON *node);']
+
+def json_to_string_definition():
+     return ['std::string JsonToString(cJSON *node) {lb}',
+            indent('std::string serialized;'),
+            indent('if (node == NULL) return serialized;'),
+            indent('char *json_string = cJSON_PrintUnformatted(node);'),
+            indent('if (json_string == NULL) {lb}'),
+            indent('cJSON_Delete(node);', 2),
+            indent('return serialized;', 2),
+            indent('{rb}'),
+            indent('serialized = json_string;'),
+            indent('free(json_string);'),
+            indent('cJSON_Delete(node);'),
+            indent('return serialized;'),
+            '{rb}']
+def string_to_json_declaration():
+    """Generate function that convert a string to a json node which must be deleted."""
+    return ['cJSON *StringToJson(const std::string &serialized);']
+
+def string_to_json_definition():
+    return ['cJSON *StringToJson(const std::string &serialized) {lb}',
+            indent('cJSON *node = cJSON_Parse(serialized.c_str());'),
+            indent('return node;'),
+            '{rb}']

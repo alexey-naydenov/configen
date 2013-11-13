@@ -14,7 +14,9 @@ def generate_header(name_code_dict, namespace=None, includes=None,
     header.extend(cpp.header_guard_front(guard_parts))
     for include_file in includes:
         header.extend(cpp.include(include_file))
-    header.extend(cpp.namespace_begin(namespace))
+    header.extend(cpp.namespace_begin(namespace) + ['']
+                  + cpp.json_to_string_declaration()
+                  + cpp.string_to_json_declaration())
     # header typedefs and 
     for name, code in name_code_dict.items():
         format_dict = {}
@@ -40,7 +42,11 @@ def generate_source(name_code_dict, namespace=None, includes=None,
     for include_file in includes:
         source.extend(cpp.include(include_file))
     source.extend(cpp.include(filename + '.h', include_path))
-    source.extend(cpp.namespace_begin(namespace))
+    source.extend(cpp.namespace_begin(namespace) + ['']
+                  + cu.rewrite(cpp.json_to_string_definition(),
+                               _FILE_FORMAT_DICT)
+                  + cu.rewrite(cpp.string_to_json_definition(),
+                               _FILE_FORMAT_DICT))
     # definitions
     for name, code in name_code_dict.items():
         format_dict = {}
@@ -107,7 +113,8 @@ def generate_object(members):
     # constructor and validate
     function_declarations.extend(
         [''] + cpp.constructor_declaration() + cpp.isvalid_declaration()
-        + cpp.object_json_declarations() + cpp.object_comparison_declaration())
+        + cpp.object_json_declarations() + cpp.object_string_declarations()
+        + cpp.object_comparison_declaration())
     function_definitions.extend(
         cpp.object_init_definition(member_init)
         + cpp.object_validate_definition(member_validate, members)
@@ -165,7 +172,7 @@ def generate_array(element, schema):
         + cpp.array_conversion_definition(element_typename, schema, element_ns))
     return code_parts
 
-_INCLUDES = ['stdint.h', 'string.h', 'string', 'vector', 'cJSON.h']
+_INCLUDES = ['stdint.h', 'string.h', 'stdlib.h', 'string', 'vector', 'cJSON.h']
 
 def generate_files(name_code_dict, filename=None, namespace=None,
                    include_path=None):

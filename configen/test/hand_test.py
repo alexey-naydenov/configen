@@ -13,12 +13,18 @@ DEFAULT_MAIN = ['#include <inc/my_config.h>',
                 '  return 0;',
                 '}']
 
+def check_output(output):
+    print(output.stdout.decode('utf-8'))
+    if output.exit_code != 0:
+        print(output.stderr.decode('utf-8'))
+        sys.exit(1)
+
 def main():
     filename = 'my_config'
     include_path = 'inc'
     test_path = '/home/leha/personal/configen/configen/test/data'
     test_files = glob(os.path.join(test_path, '*.json'))
-    test_files = [os.path.join(test_path, 'test_variable.json')]
+    test_files = [os.path.join(test_path, 'test_array_variables.json')]
     # iterate over all files in test directory
     run_main = sh.Command('./configen_test')
     for test_filename in test_files:
@@ -37,13 +43,19 @@ def main():
         if os.path.exists(main_filename):
             sh.cp(main_filename, 'main.cc')
         else:
+            print('Default main')
             with open('main.cc', 'w') as main_:
                 main_.write('\n'.join(DEFAULT_MAIN))
         sh.make()
-        output = run_main()
-        if output.exit_code != 0:
-            print(output.stderr.decode('utf-8'))
+        # check c code
+        check_output(run_main())
+        try:
+            sh.valgrind('--error-exitcode=1', '--leak-check=full',
+                        './configen_test')
+        except sh.ErrorReturnCode as e:
+            print(e.stderr.decode('utf-8'))
             sys.exit(1)
+            
 
 if __name__ == '__main__':
     main()
