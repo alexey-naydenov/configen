@@ -24,7 +24,7 @@ def main():
     include_path = 'inc'
     test_path = '/home/leha/personal/configen/configen/test/data'
     test_files = glob(os.path.join(test_path, '*.json'))
-    test_files = [os.path.join(test_path, 'test_array_variables.json')]
+    test_files = [os.path.join(test_path, 'test_array_reference.json')]
     # iterate over all files in test directory
     run_main = sh.Command('./configen_test')
     for test_filename in test_files:
@@ -49,12 +49,14 @@ def main():
         sh.make()
         # check c code
         check_output(run_main())
-        try:
-            sh.valgrind('--error-exitcode=1', '--leak-check=full',
-                        './configen_test')
-        except sh.ErrorReturnCode as e:
-            print(e.stderr.decode('utf-8'))
-            sys.exit(1)
+        # try:
+        #     sh.valgrind('--error-exitcode=1', '--leak-check=yes',
+        #                 '--track-origins=yes',
+        #                 '--suppressions=/home/leha/valgrind.supp',
+        #                 './configen_test')
+        # except sh.ErrorReturnCode as e:
+        #     print(e.stderr.decode('utf-8'))
+        #     sys.exit(1)
             
 
 if __name__ == '__main__':

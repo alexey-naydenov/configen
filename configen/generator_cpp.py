@@ -22,12 +22,14 @@ def generate_header(name_code_dict, namespace=None, includes=None,
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
+        format_dict['name'] = name
         header.extend([p.format_map(format_dict) for p in code['predefine']])
     # header declarations
     for name, code in name_code_dict.items():
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
+        format_dict['name'] = name
         for template in code.get('declarations', []):
             header.append(template.format_map(format_dict))
     # header end

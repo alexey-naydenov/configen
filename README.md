@@ -1,8 +1,9 @@
 # configen
 
-Code generator for configuration handling.
+Code generator for handling program configuration.
 
-Map JSON tree onto C++ object hierarchy.
+Convert json schema into C++ object hierarchy that enabled json
+serialization/deserialization.
 
 ### Features/Restrictions:
 

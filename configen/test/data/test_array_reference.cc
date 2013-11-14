@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cassert>
 #include <inc/my_config.h>
 
@@ -7,6 +8,6 @@ int main() {
   cfg.an_array.push_back(10);
   assert(cfg.an_array.size() == 1);
   assert(cfg.an_array[0] == 10);
-
+  std::cout << cfg.ToString() << std::endl;
   return 0;
 }

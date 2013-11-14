@@ -21,6 +21,13 @@ int main() {
     } // loop j
   } // loop i
   // to json
-  std::cout << cfg.ToString() << std::endl;
+  assert(cfg.FromString("{\"modules\":[[10,11,12,13,14],[10,11,12,13,14],"
+                        "[10,11,12,13,14],[10,11,12,13,14],"
+                        "[10,11,12,13,14]]}"));
+  for (std::size_t i = 0; i != 5; ++i) {
+    for (std::size_t j = 0; j != 5; ++j) {
+      assert(cfg.modules[i][j] == 10 + j);
+    } // loop j
+  } // loop i
   return 0;
 }
