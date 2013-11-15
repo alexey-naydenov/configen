@@ -54,6 +54,8 @@ def generate_source(name_code_dict, namespace=None, includes=None,
         format_dict = {}
         format_dict.update(_FILE_FORMAT_DICT)
         format_dict['typename'] = cu.to_camel_case(name)
+        format_dict['name'] = name
+        format_dict['name_array'] = '"' + name + '"'
         for template in code.get('definitions', []):
             source.append(template.format_map(format_dict))
     # source end
@@ -74,10 +76,12 @@ def generate_variable(schema):
 
 def generate_object(members):
     code_parts = {'predefine': ['struct {typename};'],
-                  'declarations': (cpp.init_declaration() 
-                                   + cpp.validate_declaration()
-                                   + cpp.conversion_declaration()
-                                   + [''] + ['struct {typename} {lb}']),
+                  'declarations': 
+                  (cpp.init_declaration() + cpp.validate_declaration()
+                   + cpp.conversion_declaration()
+                   + ['', 'struct {typename} {lb}',
+                      cpp.indent('static const std::size_t kNamesLength;'),
+                      cpp.indent('static const char * const kNames[];')]),
                   'definitions': []}
     # lists to collect code parts
     member_defines = []
@@ -92,6 +96,7 @@ def generate_object(members):
         else:
             member_type = cu.to_camel_case(member_name)
         member_format_dict = {
+            'name_array': '{name_array}, "' + member_name + '"',
             'namespace': '{namespace}{typename}::', 'function_prefix': 'static ', 
             'typename': member_type, 'lb': '{lb}', 'rb': '{rb}'}
         # member predefines

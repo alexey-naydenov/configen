@@ -417,11 +417,15 @@ def object_json_declarations():
             indent('return Validate{typename}(node);'),
             '{rb}',
             'cJSON *ToJson() const {lb}',
-            indent('cJSON *node = cJSON_CreateObject();'),
-            indent('cJSON *object;'),
-            indent('{typename}ToJson(*this, &object);'),
-            indent('cJSON_AddItemToObject(node, "{name}", object);'),
-            indent('return node;'),
+            indent('cJSON *child;'),
+            indent('{typename}ToJson(*this, &child);'),
+            indent('cJSON *parent;'),
+            indent('for (int i = kNamesLength - 1; i != -1; --i) {lb}'),
+            indent('parent = cJSON_CreateObject();', 2),
+            indent('cJSON_AddItemToObject(parent, kNames[i], child);', 2),
+            indent('child = parent;', 2),
+            indent('{rb}'),
+            indent('return parent;'),
             '{rb}',
             'bool FromJson(const cJSON *node) {lb}',
             indent('return JsonTo{typename}(node, this);'),
@@ -455,6 +459,8 @@ def validate_call(variable_code):
 
 def object_init_definition(member_calls):
     definition = [
+        'const char * const {namespace}{typename}::kNames[] = {lb}{name_array}{rb};',
+        'const std::size_t {namespace}{typename}::kNamesLength = sizeof({namespace}{typename}::kNames)/sizeof({namespace}{typename}::kNames[0]);',
         'void {namespace}Init{typename}({namespace}{typename} *value) {lb}']
     body = []
     for member_call in member_calls:
