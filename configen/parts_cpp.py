@@ -428,7 +428,14 @@ def object_json_declarations():
             indent('return parent;'),
             '{rb}',
             'bool FromJson(const cJSON *node) {lb}',
-            indent('return JsonTo{typename}(node, this);'),
+            indent('cJSON *child = NULL;'),
+            indent('cJSON *parent = const_cast<cJSON *>(node);'),
+            indent('for (int i = 0; i != kNamesLength; ++i) {lb}'),
+            indent('child = cJSON_GetObjectItem(parent, kNames[i]);', 2),
+            indent('if (child == NULL) return false;', 2),
+            indent('parent = child;', 2),
+            indent('{rb}'),
+            indent('return JsonTo{typename}(child, this);'),
             '{rb}']
 
 def object_string_declarations():
