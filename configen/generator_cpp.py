@@ -125,7 +125,8 @@ def generate_object(members):
     function_definitions.extend(
         cpp.object_init_definition(member_init)
         + cpp.object_validate_definition(member_validate, members)
-        + cpp.object_conversion_definition(members))
+        + cpp.object_conversion_definition(members) 
+        + cpp.object_comparison_definition(members))
     # finalize and return
     code_parts['declarations'].extend(cpp.indent(member_defines))
     code_parts['declarations'].append('')

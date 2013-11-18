@@ -1,6 +1,7 @@
 """Functions for generation parts of code."""
 
 import os.path
+from pprint import pprint
 import configen.utils as cu
 
 _INDENT = '  '
@@ -515,6 +516,17 @@ def _object_validate_json(children):
 def object_validate_definition(member_calls, children):
     return _object_validate_value(member_calls) \
         + _object_validate_json(children)
+
+def object_comparison_definition(children):
+    definition = ['bool {namespace}{typename}::operator==(const {namespace}{typename} &other) const {lb}']
+    body = ['bool result = true;']
+    for child_name in children:
+        body.append('result &= ({name} == other.{name});'.format(
+            name=child_name))
+    body.append('return result;')
+    definition.extend(indent(body))
+    definition.append('{rb}')
+    return definition;
 
 def _object_json_conversion(children):
     definition = [('bool {namespace}{typename}ToJson('
