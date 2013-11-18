@@ -161,7 +161,8 @@ def generate_array(element, schema):
     code_parts['predefine'].append('typedef std::vector<' + element_typename
                                    + '> {typename};')
     # copy declarations and add array declarations
-    element_format_dict = {'typename': element_typename, 
+    element_format_dict = {'typename': element_typename,
+                           'name_array': '{name_array}',
                            'namespace': '{namespace}',
                            'function_prefix': '{function_prefix}',
                            'lb': '{lb}', 'rb': '{rb}'}
