@@ -1,7 +1,8 @@
 from datetime import datetime
+import os.path
+from pprint import pprint
 import configen.utils as cu
 import configen.parts_cpp as cpp
-from pprint import pprint
 
 _FILE_FORMAT_DICT = {'lb': '{', 'rb': '}', 'namespace': '',
                      'function_prefix': ''}
@@ -196,3 +197,9 @@ def generate_files(name_code_dict, filename=None, namespace=None,
     files['source'] = '\n'.join(generate_source(
         name_code_dict, namespace, [], filename, include_path))
     return files
+
+def write_files(code, filename):
+    with open(filename + '.h', 'w') as header:
+        header.write(code['header'])
+    with open(filename + '.cc', 'w') as src:
+            src.write(code['source'])

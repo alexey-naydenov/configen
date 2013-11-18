@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+import argparse
+import os.path
+import configen.generate as cg
+
+def main():
+    # command line options
+    parser = argparse.ArgumentParser(
+        description='Convert json schema into code.')
+    parser.add_argument('-i', '--input-file', type=argparse.FileType('r'),
+                        required=True, help='json schema file name')
+    parser.add_argument('-o', '--output-file', required=True,
+                        help=('base name for file to be created, '
+                              'extension is language dependent'))
+    parser.add_argument('--include-path', default='', help='include directory')
+    parser.add_argument('-n', '--namespace', 
+                        help='namespace for objects and functions')
+    parser.add_argument('-l', '--language', default='c++', 
+                        help='output language')
+    args = parser.parse_args()
+    # convert and write
+    string_of_json = args.input_file.read()
+    code = cg.convert_json(string_of_json, language=args.language,
+                           namespace=args.namespace.split('.'),
+                           filename=os.path.basename(args.output_file),
+                           include_path=args.include_path);
+    cg.write_files(code, filename=args.output_file, language=args.language)
+
+if __name__ == '__main__':
+   main()
+

@@ -8,6 +8,10 @@ import configen.generator_cpp as cpp
 _LANGUAGE_MODULE_DICT = {'c++': cpp}
 
 
+def write_files(code, language, filename):
+    generator_module = _LANGUAGE_MODULE_DICT[language]
+    generator_module.write_files(code, filename)
+
 def convert_json(json_schema, language, **kwargs):
     """Convert json to dict and call actual generator function."""
     return convert_schema_to_language(
