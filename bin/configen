@@ -13,8 +13,11 @@ def main():
     parser.add_argument('-o', '--output-file', required=True,
                         help=('base name for file to be created, '
                               'extension is language dependent'))
-    parser.add_argument('--include-path', default='', help='include directory')
-    parser.add_argument('-n', '--namespace', 
+    parser.add_argument('--include-path', default='', 
+                        help='include directory where header will be placed')
+    parser.add_argument('--include', type=str, nargs='*',
+                        help='full path to file that needs to be included')
+    parser.add_argument('-n', '--namespace', default='',
                         help='namespace for objects and functions')
     parser.add_argument('-l', '--language', default='c++', 
                         help='output language')
@@ -24,7 +27,8 @@ def main():
     code = cg.convert_json(string_of_json, language=args.language,
                            namespace=args.namespace.split('.'),
                            filename=os.path.basename(args.output_file),
-                           include_path=args.include_path);
+                           include_path=args.include_path,
+                           includes=args.include);
     cg.write_files(code, filename=args.output_file, language=args.language)
 
 if __name__ == '__main__':

@@ -185,12 +185,13 @@ def generate_array(element, schema):
 _INCLUDES = ['stdint.h', 'string.h', 'stdlib.h', 'string', 'vector', 'cJSON.h']
 
 def generate_files(name_code_dict, filename=None, namespace=None,
-                   include_path=None):
+                   include_path=None, includes=None):
     namespace = namespace if namespace is not None else []
     filename = filename if filename is not None else 'config'
     include_path = include_path if include_path is not None else ''
+    includes = includes if includes is not None else []
     assert isinstance(namespace, list) == True, 'Namespace must be a list.'
-    includes = _INCLUDES
+    includes = _INCLUDES + includes
     files = {}
     files['header'] = '\n'.join(generate_header(
         name_code_dict, namespace, includes, filename))
