@@ -1,6 +1,7 @@
 """Generic functions for generating code."""
 
 import json
+import sys
 
 import configen.generator_cpp as cpp
 
@@ -14,8 +15,13 @@ def write_files(code, language, filename):
 
 def convert_json(json_schema, language, **kwargs):
     """Convert json to dict and call actual generator function."""
-    return convert_schema_to_language(
-        json.loads(json_schema), language, **kwargs)
+    try:
+        json_data = json.loads(json_schema)
+    except Exception as e:
+        print("Error: failed to parse json")
+        print(str(e))
+        sys.exit(1)
+    return convert_schema_to_language(json_data, language, **kwargs)
 
 
 def convert_schema_to_language(schema, language, **kwargs):
