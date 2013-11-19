@@ -400,6 +400,7 @@ def variable_conversion_definition(schema):
 def constructor_declaration():
     return ['{typename}() {lb}',
             indent('Init{typename}(this);'),
+            indent('pre_update = NULL;'),
             '{rb}']
 
 def object_comparison_declaration():
@@ -435,6 +436,11 @@ def object_json_declarations():
             indent('child = cJSON_GetObjectItem(parent, kNames[i]);', 2),
             indent('if (child == NULL) return false;', 2),
             indent('parent = child;', 2),
+            indent('{rb}'),
+            indent('if (pre_update != NULL) {lb}'),
+            indent('{typename} new_value = *this;', 2),
+            indent('if (!JsonTo{typename}(child, &new_value)) return false;', 2),
+            indent('if (!(*pre_update)(*this, new_value)) return false;', 2),
             indent('{rb}'),
             indent('return JsonTo{typename}(child, this);'),
             '{rb}']

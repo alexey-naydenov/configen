@@ -17,7 +17,7 @@ def generate_header(name_code_dict, namespace=None, includes=None,
         header.extend(cpp.include(include_file))
     header.extend(cpp.namespace_begin(namespace) + ['']
                   + cpp.json_to_string_declaration()
-                  + cpp.string_to_json_declaration())
+                  + cpp.string_to_json_declaration() + [''])
     # header typedefs and 
     for name, code in name_code_dict.items():
         format_dict = {}
@@ -79,10 +79,12 @@ def generate_object(members):
     code_parts = {'predefine': ['struct {typename};'],
                   'declarations': 
                   (cpp.init_declaration() + cpp.validate_declaration()
-                   + cpp.conversion_declaration()
+                   + cpp.conversion_declaration() 
                    + ['', 'struct {typename} {lb}',
                       cpp.indent('static const std::size_t kNamesLength;'),
-                      cpp.indent('static const char * const kNames[];')]),
+                      cpp.indent('static const char * const kNames[];'),
+                      cpp.indent('bool (*pre_update)(const {typename} &current_value,'
+                                 ' const {typename} &new_value);')]),
                   'definitions': []}
     # lists to collect code parts
     member_defines = []
