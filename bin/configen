@@ -16,7 +16,8 @@ def main():
     parser.add_argument('--include-path', default='', 
                         help='include directory where header will be placed')
     parser.add_argument('--include', type=str, nargs='*',
-                        help='full path to file that needs to be included')
+                        help=('full path to file that needs to be included '
+                              'in the source file'))
     parser.add_argument('-n', '--namespace', default='',
                         help='namespace for objects and functions')
     parser.add_argument('-l', '--language', default='c++', 

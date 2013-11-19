@@ -42,9 +42,9 @@ def generate_source(name_code_dict, namespace=None, includes=None,
                     filename=None, include_path=None):
     source = []
     # source start
+    source.extend(cpp.include(filename + '.h', include_path))
     for include_file in includes:
         source.extend(cpp.include(include_file))
-    source.extend(cpp.include(filename + '.h', include_path))
     source.extend(cpp.namespace_begin(namespace) + ['']
                   + cu.rewrite(cpp.json_to_string_definition(),
                                _FILE_FORMAT_DICT)
@@ -189,14 +189,14 @@ def generate_files(name_code_dict, filename=None, namespace=None,
     namespace = namespace if namespace is not None else []
     filename = filename if filename is not None else 'config'
     include_path = include_path if include_path is not None else ''
-    includes = includes if includes is not None else []
+    src_includes = includes if includes is not None else []
     assert isinstance(namespace, list) == True, 'Namespace must be a list.'
-    includes = _INCLUDES + includes
+    header_includes = _INCLUDES
     files = {}
     files['header'] = '\n'.join(generate_header(
-        name_code_dict, namespace, includes, filename))
+        name_code_dict, namespace, header_includes, filename))
     files['source'] = '\n'.join(generate_source(
-        name_code_dict, namespace, [], filename, include_path))
+        name_code_dict, namespace, src_includes, filename, include_path))
     return files
 
 def write_files(code, filename):
