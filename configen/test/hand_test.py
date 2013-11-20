@@ -24,7 +24,7 @@ def main():
     include_path = 'inc'
     test_path = '/home/leha/personal/configen/configen/test/data'
     test_files = glob(os.path.join(test_path, '*.json'))
-    #test_files = [os.path.join(test_path, 'test_array_variables.json')]
+    #test_files = [os.path.join(test_path, 'test_schema.json')]
     # copy header with helper test functions
     sh.cp(os.path.join(test_path, 'serialization_tests.h'), '.')
     # iterate over all files in test directory
