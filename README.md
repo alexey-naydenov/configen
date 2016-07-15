@@ -1,22 +1,23 @@
 # configen
 
-Code generator for handling program configuration.
+Converts configuration description into class definitions that support
+serialization/deserialization from/into JSON and validation.
 
-Convert json schema into C++ object hierarchy that enabled json
-serialization/deserialization.
+The project was started because there was a need to read/write JSON
+configs. There are a few c++ JSON libraries but they usually give
+access only to simple primitives. So in order to read some complex
+configuration one has to write tree traversal functions by hand. This
+utility takes config description in JSON (config schema) and produce
+classes that correspond to entities in JSON. It has the following
+features:
 
-### Features/Restrictions:
+- JSON names converted into class and member names;
+- c++ objects receive functions for serialization and deserialization;
+- objects can be checked against rules from schema (min, max, array length, etc.);
+- constructors initialize values to defaults from schema;
+- uses c++98, no exceptions, uses cJSON library.
 
-- takes schema and produce class (C++) representing it;
-- the class can be initialized from JSON string that satisfy the
-  schema;
-- the class or its part can be serialized to JSON;
-- each JSON simple type corresponds to a class member of POD type,
-  internal JSON objects are represented by members of members;
-- all objects can be freely copied;
-- during initialization values can be verified to satisfy schema (min,
-  max, etc.);
-- input is parsed once no forward references.
+Schema examples can be found in configen/test/data.
 
 ### Implementations details:
 
